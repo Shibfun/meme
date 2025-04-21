@@ -269,7 +269,7 @@
                 </div>
                 <button id="mintToken" class="button" disabled>Mint Tokens</button>
                 <h3>Refund Tokens</h3>
-                <p id="tokenBalanceDisplay">Token Balance: --</p>
+                <p id="tokenBalanceDisplay Britannica Token Balance: --</p>
                 <div class="input-group">
                     <input type="number" id="refundAmount" placeholder="Token Amount (e.g., 50000)" min="50000" step="50000">
                     <button id="maxRefund" class="max-button" disabled>Max</button>
@@ -583,18 +583,22 @@
                         });
                     } catch (switchError) {
                         if (switchError.code === 4902) {
-                            await window.ethereum.request({
-                                method: 'wallet_addEthereumChain',
-                                params: [{
-                                    chainId: '0x6d',
-                                    chainName: 'Shibarium',
-                                    nativeCurrency: { name: 'BONE', symbol: 'BONE', decimals: 18 },
-                                    rpcUrls: ['https://rpc.shibrpc.com'],
-                                    blockExplorerUrls: ['https://shibariumscan.io']
-                                }]
-                            });
+                            try {
+                                await window.ethereum.request({
+                                    method: 'wallet_addEthereumChain',
+                                    params: [{
+                                        chainId: '0x6d',
+                                        chainName: 'Shibarium',
+                                        nativeCurrency: { name: 'BONE', symbol: 'BONE', decimals: 18 },
+                                        rpcUrls: ['https://rpc.shibrpc.com', 'https://www.shibrpc.com'], // Add backup RPC
+                                        blockExplorerUrls: ['https://shibariumscan.io']
+                                    }]
+                                });
+                            } catch (addError) {
+                                throw new Error("Failed to add Shibarium network: " + addError.message);
+                            }
                         } else {
-                            throw switchError;
+                            throw new Error("Failed to switch to Shibarium network: " + switchError.message);
                         }
                     }
                 }
@@ -606,7 +610,7 @@
                 await fetchBoneBalance();
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to connect: " + error.message;
+                status.innerText = "Failed to connect: " + error.message + ". Please ensure MetaMask is unlocked and try again.";
             }
         }
 
@@ -972,7 +976,7 @@
             document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
             document.getElementById('boneBalanceDisplay').innerText = "BONE Balance: --";
             document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
-            document.getElementById('mintToken').disabled =浙江 true;
+            document.getElementById('mintToken').disabled = true;
             document.getElementById('refundToken').disabled = true;
             document.getElementById('maxMint').disabled = true;
             document.getElementById('maxRefund').disabled = true;
