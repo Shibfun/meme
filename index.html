@@ -222,18 +222,51 @@
             <div id="queryResult" class="status"></div>
         </div>
 
-        <div class="how-it-works">
-            <h2>How It Works?</h2>
-            <p>Create and launch your own meme token on Shibarium with ease! Here’s how our Meme Token Launchpad works:</p>
+<div class="how-it-works">
+    <h2>How It Works?</h2>
+    <p>Launch your meme token on Shibarium with our Meme Token Launchpad! It’s fast, fair, and powered by the BONE community. Here’s the WOOF-tastic process with all the juicy details:</p>
+    <ul>
+        <li><strong>Connect Your Wallet</strong>: Fire up MetaMask and connect to the Shibarium network (chain ID: 109). Make sure your wallet has enough <span class="highlight">BONE</span> to cover gas fees for creating and managing your token. No BONE? Grab some on WoofSwap, pup!</li>
+        <li><strong>Create Your Token</strong>: Enter a catchy name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”) to deploy your meme token. Here’s how the <span class="highlight">1 billion total supply</span> (1,000,000,000 tokens, 18 decimals) is allocated at creation:
             <ul>
-                <li><strong>Connect Wallet</strong>: Use MetaMask to connect to the Shibarium network. Ensure you have BONE for gas fees.</li>
-                <li><strong>Create Token</strong>: Enter a name and symbol to deploy your meme token. A fixed supply is minted, with a portion allocated to the owner and the rest for fair minting.</li>
-                <li><strong>Fair Minting</strong>: Users can mint tokens by sending BONE (1 BONE = 50,000 tokens, up to 490M tokens total). Track progress in "My Created Tokens".</li>
-                <li><strong>Launch</strong>: Once 490M tokens are minted, the owner can start the launch, adding liquidity to WoofSwap and locking LP tokens.</li>
-                <li><strong>Query Tokens</strong>: Check your tokens or any token’s status (minted amount, progress, etc.) using its address.</li>
-                <li><strong>Secure & Transparent</strong>: Built on Shibarium with non-reentrant safeguards and clear tokenomics for fair launches.</li>
+                <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea.</li>
+                <li><span class="highlight">98% (980,000,000 tokens)</span> is minted to the token contract, reserved for fair minting by the community and liquidity provision after launch.</li>
             </ul>
-        </div>
+        </li>
+        <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by sending <span class="highlight">BONE</span> to the contract. The rules are crystal clear:
+            <ul>
+                <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum mint: 1 BONE, multiples of 1 BONE only).</li>
+                <li>Up to <span class="highlight">490,000,000 tokens (49% of total supply)</span> can be minted by users during this phase.</li>
+                <li>Each wallet can contribute up to <span class="highlight">1,000 BONE</span> (equivalent to 50,000,000 tokens) to keep things fair.</li>
+                <li>Track the minting progress in real-time under “My Created Tokens” with a shiny progress bar showing how close you are to the 490M goal!</li>
+                <li>Before launch, users can request a refund by returning their tokens, receiving <span class="highlight">1 BONE per 50,000 tokens</span> sent back.</li>
+            </ul>
+        </li>
+        <li><strong>Launch Your Token</strong>: Once <span class="highlight">490,000,000 tokens</span> are minted, you (the owner) can trigger the launch. Here’s what happens:
+            <ul>
+                <li>The remaining <span class="highlight">490,000,000 tokens</span> (49% of total supply) held in the contract are paired with all collected BONE (up to 9,800 BONE if fully minted).</li>
+                <li>This creates a liquidity pool on WoofSwap (via Uniswap V2 Router at <span class="highlight">0x96b16aBD53Bfd765F4CD118590C1d0be8B57DE24</span>).</li>
+                <li>The resulting LP tokens are sent to a secure locker address (<span class="highlight">0xfCDbE8Fd9173713d2B667F3a38B1964a045516E4</span>) to ensure trust and transparency.</li>
+                <li>Trading begins, and your token is live on Shibarium!</li>
+            </ul>
+        </li>
+        <li><strong>Query Token Status</strong>: Curious about your token or someone else’s? Enter the token address in “Query Token Info” to see:
+            <ul>
+                <li>Name, symbol, and launch status (minting or launched).</li>
+                <li>Minted amount vs. the 490M mint limit, with a progress bar.</li>
+                <li>Perfect for tracking your project or scouting other WOOF-worthy tokens!</li>
+            </ul>
+        </li>
+        <li><strong>Fair, Secure, and Transparent</strong>: Our Launchpad is built on Shibarium for low fees and high speed. Key features:
+            <ul>
+                <li><span class="highlight">Non-reentrant protection</span> to prevent sneaky attacks.</li>
+                <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint.</li>
+                <li><span class="highlight">Clear tokenomics</span>: 2% to creator, 49% to fair minting, 49% to liquidity.</li>
+                <li>Ownership can be renounced or transferred for added flexibility.</li>
+            </ul>
+        </li>
+    </ul>
+</div>
 
         <div class="footer">
             Powered by <a href="https://shibarium.shib.io/" target="_blank">Shibarium</a> | Meme Token Launchpad © 2025
