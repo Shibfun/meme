@@ -706,7 +706,7 @@
                         console.warn("ownerAllocationClaimed not available:", e.message);
                     }
                     const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
-                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
+                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance, 'ether')})`;
                     return { tokenBalance, boneContributed, ownerAllocation, refundableBalance };
                 } catch (error) {
                     console.error("Failed to fetch user info:", error.message);
@@ -854,15 +854,19 @@
                 } catch (e) {
                     console.warn("ownerAllocationClaimed not available:", e.message);
                 }
-                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
+
+                const bnTokenBalance = new web3.utils.BN(tokenBalance);
+                const bnOwnerAllocation = new web3.utils.BN(ownerAllocation);
+                const refundableBalance = bnTokenBalance.sub(bnOwnerAllocation);
                 const refundAmountWei = web3.utils.toWei(refundAmount, 'ether');
+                const bnRefundAmountWei = new web3.utils.BN(refundAmountWei);
                 const boneRequired = Number(refundAmount) / TOKENS_PER_BONE;
 
-                if (Number(tokenBalance) < Number(refundAmountWei)) {
+                if (bnTokenBalance.lt(bnRefundAmountWei)) {
                     alert(`Insufficient token balance! You have ${web3.utils.fromWei(tokenBalance, 'ether')} tokens.`);
                     return;
                 }
-                if (Number(refundableBalance) < Number(refundAmountWei)) {
+                if (refundableBalance.lt(bnRefundAmountWei)) {
                     alert(`Cannot refund creator's allocation (20M tokens)! Refundable: ${web3.utils.fromWei(refundableBalance, 'ether')} tokens.`);
                     return;
                 }
