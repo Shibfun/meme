@@ -165,6 +165,15 @@
             margin-bottom: 10px; 
             font-size: 0.95em; 
         }
+        .how-it-works .highlight { 
+            color: #F5A623; 
+            font-weight: 600; 
+        }
+        .action-buttons { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }
         @media (max-width: 600px) {
             .container { padding: 15px; }
             .section, .how-it-works { padding: 15px; }
@@ -176,6 +185,7 @@
             .token-table td button { width: 100%; margin: 5px 0; }
             .how-it-works ul { padding-left: 15px; }
             .how-it-works li { font-size: 0.9em; }
+            .action-buttons { flex-direction: column; }
         }
     </style>
 </head>
@@ -219,53 +229,73 @@
             <h2>Query Token Info</h2>
             <input type="text" id="queryTokenAddress" placeholder="Token Address">
             <button id="queryToken" class="button">Query Token</button>
-            <div id="queryResult" class="status"></div>
+            <div id="queryResult" class="status">
+                <h3>Token Info</h3>
+                <p id="tokenNameDisplay">Name: --</p>
+                <p id="tokenSymbolDisplay">Symbol: --</p>
+                <p id="tokenStatusDisplay">Status: --</p>
+                <p id="tokenMintedDisplay">Minted: -- / --</p>
+                <div class="progress-container">
+                    <div id="tokenProgressBar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <p id="tokenProgressDisplay">Progress: --%</p>
+                <h3>Your Info</h3>
+                <p id="boneContributedDisplay">BONE Contributed: --</p>
+                <p id="tokenBalanceDisplay">Token Balance: --</p>
+                <h3>Mint Tokens</h3>
+                <input type="number" id="mintAmount" placeholder="BONE Amount (e.g., 1)" min="1" step="1">
+                <button id="mintToken" class="button" disabled>Mint Tokens</button>
+                <h3>Refund Tokens</h3>
+                <input type="number" id="refundAmount" placeholder="Token Amount (e.g., 50000)" min="50000" step="50000">
+                <button id="refundToken" class="button" disabled>Refund Tokens</button>
+                <div id="actionStatus" class="status"></div>
+            </div>
         </div>
 
-<div class="how-it-works">
-    <h2>How It Works?</h2>
-    <p>Launch your meme token on Shibarium with our Meme Token Launchpad! It’s fast, fair, and powered by the BONE community. Here’s the WOOF-tastic process with all the juicy details:</p>
-    <ul>
-        <li><strong>Connect Your Wallet</strong>: Fire up MetaMask and connect to the Shibarium network (chain ID: 109). Make sure your wallet has enough <span class="highlight">BONE</span> to cover gas fees for creating and managing your token. No BONE? Grab some on WoofSwap, pup!</li>
-        <li><strong>Create Your Token</strong>: Enter a catchy name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”) to deploy your meme token. Here’s how the <span class="highlight">1 billion total supply</span> (1,000,000,000 tokens, 18 decimals) is allocated at creation:
+        <div class="how-it-works">
+            <h2>How It Works?</h2>
+            <p>Launch your meme token on Shibarium with our Meme Token Launchpad! It’s fast, fair, and powered by the BONE community. Here’s the WOOF-tastic process with all the juicy details:</p>
             <ul>
-                <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea.</li>
-                <li><span class="highlight">98% (980,000,000 tokens)</span> is minted to the token contract, reserved for fair minting by the community and liquidity provision after launch.</li>
+                <li><strong>Connect Your Wallet</strong>: Fire up MetaMask and connect to the Shibarium network (chain ID: 109). Make sure your wallet has enough <span class="highlight">BONE</span> to cover gas fees for creating and managing your token. No BONE? Grab some on WoofSwap, pup!</li>
+                <li><strong>Create Your Token</strong>: Enter a catchy name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”) to deploy your meme token. Here’s how the <span class="highlight">1 billion total supply</span> (1,000,000,000 tokens, 18 decimals) is allocated at creation:
+                    <ul>
+                        <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea.</li>
+                        <li><span class="highlight">98% (980,000,000 tokens)</span> is minted to the token contract, reserved for fair minting by the community and liquidity provision after launch.</li>
+                    </ul>
+                </li>
+                <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by sending <span class="highlight">BONE</span> to the contract. The rules are crystal clear:
+                    <ul>
+                        <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum mint: 1 BONE, multiples of 1 BONE only).</li>
+                        <li>Up to <span class="highlight">490,000,000 tokens (49% of total supply)</span> can be minted by users during this phase.</li>
+                        <li>Each wallet can contribute up to <span class="highlight">1,000 BONE</span> (equivalent to 50,000,000 tokens) to keep things fair.</li>
+                        <li>Track the minting progress in real-time under “My Created Tokens” with a shiny progress bar showing how close you are to the 490M goal!</li>
+                        <li>Before launch, users can request a refund by returning their tokens, receiving <span class="highlight">1 BONE per 50,000 tokens</span> sent back.</li>
+                    </ul>
+                </li>
+                <li><strong>Launch Your Token</strong>: Once <span class="highlight">490,000,000 tokens</span> are minted, you (the owner) can trigger the launch. Here’s what happens:
+                    <ul>
+                        <li>The remaining <span class="highlight">490,000,000 tokens</span> (49% of total supply) held in the contract are paired with all collected BONE (up to 9,800 BONE if fully minted).</li>
+                        <li>This creates a liquidity pool on WoofSwap.</li>
+                        <li>The resulting LP tokens are sent to a secure locker address to ensure trust and transparency - Permanent lock.</li>
+                        <li>Trading begins, and your token is live on Shibarium!</li>
+                    </ul>
+                </li>
+                <li><strong>Query Token Status</strong>: Curious about your token or someone else’s? Enter the token address in “Query Token Info” to see:
+                    <ul>
+                        <li>Name, symbol, and launch status (minting or launched).</li>
+                        <li>Minted amount vs. the 490M mint limit, with a progress bar.</li>
+                        <li>Perfect for tracking your project or scouting other WOOF-worthy tokens!</li>
+                    </ul>
+                </li>
+                <li><strong>Fair, Secure, and Transparent</strong>: Our Launchpad is built on Shibarium for low fees and high speed. Key features:
+                    <ul>
+                        <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint.</li>
+                        <li><span class="highlight">Clear tokenomics</span>: 2% to creator, 49% to fair minting, 49% to liquidity.</li>
+                        <li>Ownership can be renounced or transferred for added flexibility.</li>
+                    </ul>
+                </li>
             </ul>
-        </li>
-        <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by sending <span class="highlight">BONE</span> to the contract. The rules are crystal clear:
-            <ul>
-                <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum mint: 1 BONE, multiples of 1 BONE only).</li>
-                <li>Up to <span class="highlight">490,000,000 tokens (49% of total supply)</span> can be minted by users during this phase.</li>
-                <li>Each wallet can contribute up to <span class="highlight">1,000 BONE</span> (equivalent to 50,000,000 tokens) to keep things fair.</li>
-                <li>Track the minting progress in real-time under “My Created Tokens” with a shiny progress bar showing how close you are to the 490M goal!</li>
-                <li>Before launch, users can request a refund by returning their tokens, receiving <span class="highlight">1 BONE per 50,000 tokens</span> sent back.</li>
-            </ul>
-        </li>
-        <li><strong>Launch Your Token</strong>: Once <span class="highlight">490,000,000 tokens</span> are minted, you (the owner) can trigger the launch. Here’s what happens:
-            <ul>
-                <li>The remaining <span class="highlight">490,000,000 tokens</span> (49% of total supply) held in the contract are paired with all collected BONE (up to 9,800 BONE if fully minted).</li>
-                <li>This creates a liquidity pool on WoofSwap.</li>
-                <li>The resulting LP tokens are sent to a secure locker address to ensure trust and transparency - Permanent lock.</li>
-                <li>Trading begins, and your token is live on Shibarium!</li>
-            </ul>
-        </li>
-        <li><strong>Query Token Status</strong>: Curious about your token or someone else’s? Enter the token address in “Query Token Info” to see:
-            <ul>
-                <li>Name, symbol, and launch status (minting or launched).</li>
-                <li>Minted amount vs. the 490M mint limit, with a progress bar.</li>
-                <li>Perfect for tracking your project or scouting other WOOF-worthy tokens!</li>
-            </ul>
-        </li>
-        <li><strong>Fair, Secure, and Transparent</strong>: Our Launchpad is built on Shibarium for low fees and high speed. Key features:
-            <ul>
-                <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint.</li>
-                <li><span class="highlight">Clear tokenomics</span>: 2% to creator, 49% to fair minting, 49% to liquidity.</li>
-                <li>Ownership can be renounced or transferred for added flexibility.</li>
-            </ul>
-        </li>
-    </ul>
-</div>
+        </div>
 
         <div class="footer">
             Powered by <a href="https://shibarium.shib.io/" target="_blank">Shibarium</a> | Meme Token Launchpad © 2025
@@ -274,8 +304,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
-        let web3, accounts, launchpadContract;
+        let web3, accounts, launchpadContract, currentTokenContract;
         const launchpadAddress = "0x0aBc8f5faFf63e55B40F81fD6081d4cB7396c903";
+        const TOKENS_PER_BONE = 50000;
+        const MAX_BONE_PER_ADDRESS = 1000;
+        const MIN_MINT = 1;
 
         const launchpadABI = [
             {
@@ -350,6 +383,118 @@
                 ],
                 "name": "launchMeme",
                 "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        const memeABI = [
+            {
+                "inputs": [
+                    {"internalType": "string", "name": "_name", "type": "string"},
+                    {"internalType": "string", "name": "_symbol", "type": "string"},
+                    {"internalType": "address", "name": "_owner", "type": "address"}
+                ],
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {"indexed": true, "internalType": "address", "name": "to", "type": "address"},
+                    {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"},
+                    {"indexed": false, "internalType": "uint256", "name": "boneAmount", "type": "uint256"}
+                ],
+                "name": "FairMinted",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {"indexed": true, "internalType": "address", "name": "from", "type": "address"},
+                    {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"},
+                    {"indexed": false, "internalType": "uint256", "name": "bone", "type": "uint256"}
+                ],
+                "name": "RefundEvent",
+                "type": "event"
+            },
+            {
+                "inputs": [],
+                "name": "PRICE",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "TOKENS_PER_BONE",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "TOTAL_SUPPLY",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MINT_LIMIT",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MAX_BONE_PER_ADDRESS",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "MIN_MINT",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+                "name": "boneContributed",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "minted",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "started",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {"internalType": "address", "name": "to", "type": "address"},
+                    {"internalType": "uint256", "name": "value", "type": "uint256"}
+                ],
+                "name": "transfer",
+                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
                 "stateMutability": "nonpayable",
                 "type": "function"
             }
@@ -485,31 +630,160 @@
 
         async function queryToken() {
             const section = document.getElementById('queryTokenSection');
-            const status = document.getElementById('queryResult');
+            const status = document.getElementById('actionStatus');
             const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
-            if (!web3.utils.isAddress(tokenAddress)) return alert("Invalid token address!");
+            if (!web3.utils.isAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
             try {
                 section.classList.add('loading');
                 status.innerText = "Querying token...";
+                
+                // Verify if token is valid through Launchpad
                 const tokenStatus = await launchpadContract.methods.getTokenStatus(tokenAddress).call();
+                
+                // Initialize token contract
+                currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+
+                // Fetch token info
                 const progress = (Number(tokenStatus.minted) / Number(tokenStatus.mintLimit) * 100).toFixed(2);
-                status.innerHTML = `
-                    <h3>Token Info</h3>
-                    <p><strong>Name:</strong> ${tokenStatus.name}</p>
-                    <p><strong>Symbol:</strong> ${tokenStatus.symbol}</p>
-                    <p><strong>Status:</strong> ${tokenStatus.started ? 'Launched' : 'Minting'}</p>
-                    <p><strong>Minted:</strong> ${web3.utils.fromWei(tokenStatus.minted, 'ether')} / ${web3.utils.fromWei(tokenStatus.mintLimit, 'ether')}</p>
-                    <div class="progress-container">
-                        <div class="progress-bar" style="width: ${progress}%"></div>
-                    </div>
-                    <p><strong>Progress:</strong> ${progress}%</p>
-                `;
+                document.getElementById('tokenNameDisplay').innerText = `Name: ${tokenStatus.name}`;
+                document.getElementById('tokenSymbolDisplay').innerText = `Symbol: ${tokenStatus.symbol}`;
+                document.getElementById('tokenStatusDisplay').innerText = `Status: ${tokenStatus.started ? 'Launched' : 'Minting'}`;
+                document.getElementById('tokenMintedDisplay').innerText = `Minted: ${web3.utils.fromWei(tokenStatus.minted, 'ether')} / ${web3.utils.fromWei(tokenStatus.mintLimit, 'ether')}`;
+                document.getElementById('tokenProgressBar').style.width = `${progress}%`;
+                document.getElementById('tokenProgressDisplay').innerText = `Progress: ${progress}%`;
+
+                // Fetch user info
+                const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
+                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
+
+                // Enable/disable buttons based on status
+                const mintButton = document.getElementById('mintToken');
+                const refundButton = document.getElementById('refundToken');
+                mintButton.disabled = tokenStatus.started;
+                refundButton.disabled = tokenStatus.started || Number(tokenBalance) === 0;
+
+                status.innerText = "Token info loaded successfully!";
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to query token: " + error.message;
+                status.innerText = "Failed to query token: " + (error.message.includes("Invalid token") ? "This token was not created by the Launchpad." : error.message);
+                clearTokenInfo();
             } finally {
                 section.classList.remove('loading');
             }
+        }
+
+        async function mintToken() {
+            const section = document.getElementById('queryTokenSection');
+            const status = document.getElementById('actionStatus');
+            const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
+            const mintAmount = document.getElementById('mintAmount').value.trim();
+
+            // Input validation
+            if (!web3.utils.isAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
+            if (!mintAmount || isNaN(mintAmount) || Number(mintAmount) < MIN_MINT || Number(mintAmount) % 1 !== 0) {
+                alert("Please enter a valid integer BONE amount (minimum 1 BONE)!");
+                return;
+            }
+            const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+            if (Number(web3.utils.fromWei(boneContributed, 'ether')) + Number(mintAmount) > MAX_BONE_PER_ADDRESS) {
+                alert(`Total contribution cannot exceed ${MAX_BONE_PER_ADDRESS} BONE!`);
+                return;
+            }
+
+            try {
+                section.classList.add('loading');
+                status.innerText = "Minting tokens...";
+                const weiAmount = web3.utils.toWei(mintAmount, 'ether');
+                const tx = await web3.eth.sendTransaction({
+                    from: accounts[0],
+                    to: tokenAddress,
+                    value: weiAmount
+                });
+                status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
+                
+                // Refresh token info
+                queryToken();
+            } catch (error) {
+                console.error(error);
+                let errorMsg = error.message;
+                if (error.message.includes("Minimum mint")) {
+                    errorMsg = "Minimum mint is 1 BONE!";
+                } else if (error.message.includes("multiples of 1 BONE")) {
+                    errorMsg = "BONE amount must be an integer!";
+                } else if (error.message.includes("started")) {
+                    errorMsg = "Token has already launched!";
+                } else if (error.message.includes("MAX_BONE_PER_ADDRESS")) {
+                    errorMsg = `Total contribution cannot exceed ${MAX_BONE_PER_ADDRESS} BONE!`;
+                }
+                status.innerText = `Failed to mint: ${errorMsg}`;
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        async function refundToken() {
+            const section = document.getElementById('queryTokenSection');
+            const status = document.getElementById('actionStatus');
+            const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
+            const refundAmount = document.getElementById('refundAmount').value.trim();
+
+            // Input validation
+            if (!web3.utils.isAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
+            if (!refundAmount || isNaN(refundAmount) || Number(refundAmount) < TOKENS_PER_BONE || Number(refundAmount) % TOKENS_PER_BONE !== 0) {
+                alert(`Please enter a valid token amount (minimum ${TOKENS_PER_BONE}, multiples of ${TOKENS_PER_BONE})!`);
+                return;
+            }
+            const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+            if (Number(web3.utils.fromWei(tokenBalance, 'ether')) < Number(refundAmount)) {
+                alert("Insufficient token balance for refund!");
+                return;
+            }
+
+            try {
+                section.classList.add('loading');
+                status.innerText = "Refunding tokens...";
+                const weiAmount = web3.utils.toWei(refundAmount, 'ether');
+                const tx = await currentTokenContract.methods.transfer(tokenAddress, weiAmount).send({ from: accounts[0] });
+                status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
+                
+                // Refresh token info
+                queryToken();
+            } catch (error) {
+                console.error(error);
+                let errorMsg = error.message;
+                if (error.message.includes("started")) {
+                    errorMsg = "Token has already launched, refund not allowed!";
+                } else if (error.message.includes("TOKENS_PER_BONE")) {
+                    errorMsg = `Token amount must be a multiple of ${TOKENS_PER_BONE}!`;
+                }
+                status.innerText = `Failed to refund: ${errorMsg}`;
+            } finally {
+                section.classList.remove('loading');
+            }
+        }
+
+        function clearTokenInfo() {
+            document.getElementById('tokenNameDisplay').innerText = "Name: --";
+            document.getElementById('tokenSymbolDisplay').innerText = "Symbol: --";
+            document.getElementById('tokenStatusDisplay').innerText = "Status: --";
+            document.getElementById('tokenMintedDisplay').innerText = "Minted: -- / --";
+            document.getElementById('tokenProgressBar').style.width = "0%";
+            document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
+            document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
+            document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
+            document.getElementById('mintToken').disabled = true;
+            document.getElementById('refundToken').disabled = true;
         }
 
         function copyToClipboard(text) {
@@ -525,6 +799,8 @@
         document.getElementById('createToken').addEventListener('click', createToken);
         document.getElementById('fetchMyTokens').addEventListener('click', fetchMyTokens);
         document.getElementById('queryToken').addEventListener('click', queryToken);
+        document.getElementById('mintToken').addEventListener('click', mintToken);
+        document.getElementById('refundToken').addEventListener('click', refundToken);
 
         window.addEventListener('load', () => {
             if (!window.location.protocol.startsWith('http')) {
