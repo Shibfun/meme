@@ -162,7 +162,7 @@
             margin-top: 10px; 
         }
         .how-it-works li { 
-            margin-bottom: 10px; 
+            margin-bottom: 12px; 
             font-size: 0.95em; 
         }
         .how-it-works .highlight { 
@@ -259,17 +259,17 @@
                 <li><strong>Connect Your Wallet</strong>: Fire up MetaMask and connect to the Shibarium network (chain ID: 109). Make sure your wallet has enough <span class="highlight">BONE</span> to cover gas fees for creating and managing your token. No BONE? Grab some on WoofSwap, pup!</li>
                 <li><strong>Create Your Token</strong>: Enter a catchy name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”) to deploy your meme token. Here’s how the <span class="highlight">1 billion total supply</span> (1,000,000,000 tokens, 18 decimals) is allocated at creation:
                     <ul>
-                        <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea.</li>
+                        <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea (non-refundable).</li>
                         <li><span class="highlight">98% (980,000,000 tokens)</span> is minted to the token contract, reserved for fair minting by the community and liquidity provision after launch.</li>
                     </ul>
                 </li>
-                <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by sending <span class="highlight">BONE</span> to the contract. The rules are crystal clear:
+                <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by calling the mint function with <span class="highlight">BONE</span>. The rules are crystal clear:
                     <ul>
                         <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum mint: 1 BONE, multiples of 1 BONE only).</li>
                         <li>Up to <span class="highlight">490,000,000 tokens (49% of total supply)</span> can be minted by users during this phase.</li>
                         <li>Each wallet can contribute up to <span class="highlight">1,000 BONE</span> (equivalent to 50,000,000 tokens) to keep things fair.</li>
                         <li>Track the minting progress in real-time under “My Created Tokens” with a shiny progress bar showing how close you are to the 490M goal!</li>
-                        <li>Before launch, users can request a refund by returning their tokens, receiving <span class="highlight">1 BONE per 50,000 tokens</span> sent back.</li>
+                        <li>Before launch, users can request a refund by calling the refund function, returning their minted tokens to receive <span class="highlight">1 BONE per 50,000 tokens</span>.</li>
                     </ul>
                 </li>
                 <li><strong>Launch Your Token</strong>: Once <span class="highlight">490,000,000 tokens</span> are minted, you (the owner) can trigger the launch. Here’s what happens:
@@ -284,14 +284,16 @@
                     <ul>
                         <li>Name, symbol, and launch status (minting or launched).</li>
                         <li>Minted amount vs. the 490M mint limit, with a progress bar.</li>
+                        <li>Your BONE contribution and token balance.</li>
                         <li>Perfect for tracking your project or scouting other WOOF-worthy tokens!</li>
                     </ul>
                 </li>
                 <li><strong>Fair, Secure, and Transparent</strong>: Our Launchpad is built on Shibarium for low fees and high speed. Key features:
                     <ul>
-                        <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint.</li>
-                        <li><span class="highlight">Clear tokenomics</span>: 2% to creator, 49% to fair minting, 49% to liquidity.</li>
+                        <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint or refund.</li>
+                        <li><span class="highlight">Clear tokenomics</span>: 2% to creator (non-refundable), 49% to fair minting, 49% to liquidity.</li>
                         <li>Ownership can be renounced or transferred for added flexibility.</li>
+                        <li>No direct BONE transfers; mint and refund via dedicated functions for safety.</li>
                     </ul>
                 </li>
             </ul>
@@ -305,7 +307,7 @@
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
         let web3, accounts, launchpadContract, currentTokenContract;
-        const launchpadAddress = "0x0aBc8f5faFf63e55B40F81fD6081d4cB7396c903";
+        const launchpadAddress = "0x008fBF43e88F2cEFE396070A17aDc5F8dE4AF18b";
         const TOKENS_PER_BONE = 50000;
         const MAX_BONE_PER_ADDRESS = 1000;
         const MIN_MINT = 1;
@@ -475,6 +477,13 @@
                 "type": "function"
             },
             {
+                "inputs": [{"internalType": "address", "name": "", "type": "address"}],
+                "name": "ownerAllocationClaimed",
+                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
                 "inputs": [],
                 "name": "minted",
                 "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
@@ -486,6 +495,20 @@
                 "name": "started",
                 "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
                 "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "boneAmount", "type": "uint256"}],
+                "name": "mint",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"internalType": "uint256", "name": "tokenAmount", "type": "uint256"}],
+                "name": "refund",
+                "outputs": [],
+                "stateMutability": "nonpayable",
                 "type": "function"
             },
             {
@@ -658,14 +681,16 @@
                 // Fetch user info
                 const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
                 const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
                 document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
-                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
+                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
 
                 // Enable/disable buttons based on status
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
                 mintButton.disabled = tokenStatus.started;
-                refundButton.disabled = tokenStatus.started || Number(tokenBalance) === 0;
+                refundButton.disabled = tokenStatus.started || refundableBalance <= 0;
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
@@ -702,11 +727,7 @@
                 section.classList.add('loading');
                 status.innerText = "Minting tokens...";
                 const weiAmount = web3.utils.toWei(mintAmount, 'ether');
-                const tx = await web3.eth.sendTransaction({
-                    from: accounts[0],
-                    to: tokenAddress,
-                    value: weiAmount
-                });
+                const tx = await currentTokenContract.methods.mint(weiAmount).send({ from: accounts[0], value: weiAmount });
                 status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
                 // Refresh token info
@@ -714,14 +735,16 @@
             } catch (error) {
                 console.error(error);
                 let errorMsg = error.message;
-                if (error.message.includes("Minimum mint")) {
+                if (error.message.includes("minimum mint")) {
                     errorMsg = "Minimum mint is 1 BONE!";
-                } else if (error.message.includes("multiples of 1 BONE")) {
+                } else if (error.message.includes("integer")) {
                     errorMsg = "BONE amount must be an integer!";
-                } else if (error.message.includes("started")) {
+                } else if (error.message.includes("minting closed")) {
                     errorMsg = "Token has already launched!";
-                } else if (error.message.includes("MAX_BONE_PER_ADDRESS")) {
+                } else if (error.message.includes("max contribution")) {
                     errorMsg = `Total contribution cannot exceed ${MAX_BONE_PER_ADDRESS} BONE!`;
+                } else if (error.message.includes("mint limit")) {
+                    errorMsg = "Mint limit exceeded!";
                 }
                 status.innerText = `Failed to mint: ${errorMsg}`;
             } finally {
@@ -745,8 +768,14 @@
                 return;
             }
             const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+            const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+            const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
             if (Number(web3.utils.fromWei(tokenBalance, 'ether')) < Number(refundAmount)) {
                 alert("Insufficient token balance for refund!");
+                return;
+            }
+            if (Number(web3.utils.fromWei(refundableBalance.toString(), 'ether')) < Number(refundAmount)) {
+                alert("Cannot refund creator's allocation (20M tokens)!");
                 return;
             }
 
@@ -754,7 +783,7 @@
                 section.classList.add('loading');
                 status.innerText = "Refunding tokens...";
                 const weiAmount = web3.utils.toWei(refundAmount, 'ether');
-                const tx = await currentTokenContract.methods.transfer(tokenAddress, weiAmount).send({ from: accounts[0] });
+                const tx = await currentTokenContract.methods.refund(weiAmount).send({ from: accounts[0] });
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
                 // Refresh token info
@@ -762,10 +791,14 @@
             } catch (error) {
                 console.error(error);
                 let errorMsg = error.message;
-                if (error.message.includes("started")) {
+                if (error.message.includes("refund not allowed")) {
                     errorMsg = "Token has already launched, refund not allowed!";
-                } else if (error.message.includes("TOKENS_PER_BONE")) {
+                } else if (error.message.includes("multiple of 50,000")) {
                     errorMsg = `Token amount must be a multiple of ${TOKENS_PER_BONE}!`;
+                } else if (error.message.includes("owner allocation")) {
+                    errorMsg = "Cannot refund creator's allocation (20M tokens)!";
+                } else if (error.message.includes("insufficient balance")) {
+                    errorMsg = "Insufficient token balance!";
                 }
                 status.innerText = `Failed to refund: ${errorMsg}`;
             } finally {
