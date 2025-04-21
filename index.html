@@ -228,7 +228,10 @@
         <div class="section" id="queryTokenSection">
             <h2>Query Token Info</h2>
             <input type="text" id="queryTokenAddress" placeholder="Token Address">
-            <button id="queryToken" class="button">Query Token</button>
+            <div class="action-buttons">
+                <button id="queryToken" class="button">Query Token</button>
+                <button id="refreshToken" class="button">Refresh</button>
+            </div>
             <div id="queryResult" class="status">
                 <h3>Token Info</h3>
                 <p id="tokenNameDisplay">Name: --</p>
@@ -655,7 +658,7 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        async function queryTokenWithRetry(tokenAddress, retries = 2, delayMs = 2000) {
+        async function queryTokenWithRetry(tokenAddress, retries = 5, delayMs = 3000) {
             for (let i = 0; i <= retries; i++) {
                 try {
                     const tokenStatus = await launchpadContract.methods.getTokenStatus(tokenAddress).call();
@@ -664,6 +667,26 @@
                     if (i === retries) throw error;
                     await delay(delayMs);
                 }
+            }
+        }
+
+        async function fetchUserInfo(tokenAddress) {
+            try {
+                if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
+                    currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+                }
+                const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
+                document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
+                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
+                return { boneContributed, tokenBalance, ownerAllocation, refundableBalance };
+            } catch (error) {
+                console.error("Failed to fetch user info:", error);
+                document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
+                document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
+                return null;
             }
         }
 
@@ -678,14 +701,11 @@
             try {
                 section.classList.add('loading');
                 status.innerText = "Querying token...";
-                
-                // Verify if token is valid through Launchpad with retry
-                const tokenStatus = await queryTokenWithRetry(tokenAddress);
-                
-                // Initialize token contract
-                currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
 
-                // Fetch token info
+                // Fetch token status with retry
+                const tokenStatus = await queryTokenWithRetry(tokenAddress);
+
+                // Update token info
                 const progress = (Number(tokenStatus.minted) / Number(tokenStatus.mintLimit) * 100).toFixed(2);
                 document.getElementById('tokenNameDisplay').innerText = `Name: ${tokenStatus.name}`;
                 document.getElementById('tokenSymbolDisplay').innerText = `Symbol: ${tokenStatus.symbol}`;
@@ -695,18 +715,13 @@
                 document.getElementById('tokenProgressDisplay').innerText = `Progress: ${progress}%`;
 
                 // Fetch user info
-                const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
-                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
-                const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
-                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
-                document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
-                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
+                const userInfo = await fetchUserInfo(tokenAddress);
 
                 // Enable/disable buttons based on status
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
                 mintButton.disabled = tokenStatus.started;
-                refundButton.disabled = tokenStatus.started || refundableBalance <= 0;
+                refundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
@@ -715,10 +730,13 @@
                 if (error.message.includes("Invalid token")) {
                     errorMsg = "This token was not created by the Launchpad.";
                 } else if (error.message.includes("network")) {
-                    errorMsg = "Network error, please try again later.";
+                    errorMsg = "Network error, please try again later or click 'Refresh'.";
+                } else {
+                    errorMsg = "Failed to query token, please try refreshing.";
                 }
-                status.innerText = `Failed to query token: ${errorMsg}`;
-                clearTokenInfo();
+                status.innerText = errorMsg;
+                // Fetch user info even if token status fails
+                await fetchUserInfo(tokenAddress);
             } finally {
                 section.classList.remove('loading');
             }
@@ -753,7 +771,7 @@
                 status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
                 // Wait for network sync before querying
-                await delay(3000);
+                await delay(5000);
                 queryToken();
             } catch (error) {
                 console.error(error);
@@ -810,7 +828,7 @@
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
                 // Wait for network sync before querying
-                await delay(3000);
+                await delay(5000);
                 queryToken();
             } catch (error) {
                 console.error(error);
@@ -837,8 +855,6 @@
             document.getElementById('tokenMintedDisplay').innerText = "Minted: -- / --";
             document.getElementById('tokenProgressBar').style.width = "0%";
             document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
-            document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
-            document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
             document.getElementById('mintToken').disabled = true;
             document.getElementById('refundToken').disabled = true;
         }
@@ -856,6 +872,7 @@
         document.getElementById('createToken').addEventListener('click', createToken);
         document.getElementById('fetchMyTokens').addEventListener('click', fetchMyTokens);
         document.getElementById('queryToken').addEventListener('click', queryToken);
+        document.getElementById('refreshToken').addEventListener('click', queryToken);
         document.getElementById('mintToken').addEventListener('click', mintToken);
         document.getElementById('refundToken').addEventListener('click', refundToken);
 
