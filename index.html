@@ -269,7 +269,7 @@
                 </div>
                 <button id="mintToken" class="button" disabled>Mint Tokens</button>
                 <h3>Refund Tokens</h3>
-                <p id="tokenBalanceDisplay Britannica Token Balance: --</p>
+                <p id="tokenBalanceDisplay">Token Balance: --</p>
                 <div class="input-group">
                     <input type="number" id="refundAmount" placeholder="Token Amount (e.g., 50000)" min="50000" step="50000">
                     <button id="maxRefund" class="max-button" disabled>Max</button>
@@ -590,7 +590,7 @@
                                         chainId: '0x6d',
                                         chainName: 'Shibarium',
                                         nativeCurrency: { name: 'BONE', symbol: 'BONE', decimals: 18 },
-                                        rpcUrls: ['https://rpc.shibrpc.com', 'https://www.shibrpc.com'], // Add backup RPC
+                                        rpcUrls: ['https://rpc.shibrpc.com', 'https://www.shibrpc.com'],
                                         blockExplorerUrls: ['https://shibariumscan.io']
                                     }]
                                 });
@@ -606,7 +606,6 @@
                 document.getElementById('walletAddress').innerText = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
                 launchpadContract = new web3.eth.Contract(launchpadABI, launchpadAddress);
                 status.innerText = "Connected to Shibarium";
-                // Fetch BONE balance after connecting
                 await fetchBoneBalance();
             } catch (error) {
                 console.error(error);
@@ -625,16 +624,23 @@
             }
         }
 
-        async function fetchTokenBalance(tokenAddress) {
-            try {
-                if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
-                    currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+        async function fetchTokenBalanceWithRetry(tokenAddress, retries = 5, delayMs = 3000) {
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
+                        currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+                    }
+                    const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
+                    return tokenBalance;
+                } catch (error) {
+                    if (i === retries) {
+                        console.error("Failed to fetch token balance after retries:", error);
+                        document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: Failed to fetch (" + error.message + ")";
+                        return null;
+                    }
+                    await delay(delayMs);
                 }
-                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
-                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
-            } catch (error) {
-                console.error("Failed to fetch token balance:", error);
-                document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
             }
         }
 
@@ -649,7 +655,7 @@
                 section.classList.add('loading');
                 status.innerText = "Creating token...";
                 const tx = await launchpadContract.methods.launchMeme(name, symbol).send({ from: accounts[0] });
-                const tokenAddress = tx.events.TokenLaunched.returnValues.token;
+                const tokenAddress = tx.events.TokenLaunched?.returnValues?.token || tx.events[0]?.address;
                 status.innerHTML = `Token created successfully! Address: <a href="${shibarium.explorerUrl}/address/${tokenAddress}" target="_blank">${tokenAddress.slice(0, 6)}...${tokenAddress.slice(-4)}</a>`;
                 document.getElementById('tokenName').value = '';
                 document.getElementById('tokenSymbol').value = '';
@@ -734,6 +740,7 @@
                     const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
                     const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
                     const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
+                    console.log("User Info:", { boneContributed, tokenBalance, ownerAllocation, refundableBalance });
                     return { boneContributed, tokenBalance, ownerAllocation, refundableBalance };
                 } catch (error) {
                     if (i === retries) {
@@ -759,6 +766,7 @@
 
                 // Fetch token status with retry
                 const tokenStatus = await queryTokenWithRetry(tokenAddress);
+                console.log("Token Status:", tokenStatus);
 
                 // Update token info
                 const progress = (Number(tokenStatus.minted) / Number(tokenStatus.mintLimit) * 100).toFixed(2);
@@ -774,17 +782,34 @@
 
                 // Fetch BONE and token balances
                 await fetchBoneBalance();
-                await fetchTokenBalance(tokenAddress);
+                await fetchTokenBalanceWithRetry(tokenAddress);
 
                 // Enable/disable buttons based on status
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
                 const maxMintButton = document.getElementById('maxMint');
                 const maxRefundButton = document.getElementById('maxRefund');
-                mintButton.disabled = tokenStatus.started;
-                refundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
-                maxMintButton.disabled = tokenStatus.started;
-                maxRefundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
+
+                // Default to disabled if tokenStatus fails
+                mintButton.disabled = true;
+                refundButton.disabled = true;
+                maxMintButton.disabled = true;
+                maxRefundButton.disabled = true;
+
+                // Enable buttons based on token status and user info
+                if (tokenStatus) {
+                    mintButton.disabled = tokenStatus.started;
+                    maxMintButton.disabled = tokenStatus.started;
+                    if (userInfo) {
+                        const refundableBalance = Number(userInfo.refundableBalance);
+                        refundButton.disabled = tokenStatus.started || refundableBalance <= 0;
+                        maxRefundButton.disabled = tokenStatus.started || refundableBalance <= 0;
+                    } else {
+                        // If userInfo fails, allow refund button to be enabled if token hasn't started
+                        refundButton.disabled = tokenStatus.started;
+                        maxRefundButton.disabled = tokenStatus.started;
+                    }
+                }
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
@@ -798,9 +823,8 @@
                     errorMsg = "Failed to query token, please try refreshing.";
                 }
                 status.innerText = errorMsg;
-                // Fetch balances even if token status fails
                 await fetchBoneBalance();
-                await fetchTokenBalance(tokenAddress);
+                await fetchTokenBalanceWithRetry(tokenAddress);
             } finally {
                 section.classList.remove('loading');
             }
@@ -817,7 +841,7 @@
                 const boneBalanceEther = Number(web3.utils.fromWei(boneBalance, 'ether'));
                 const userInfo = await fetchUserInfoWithRetry(tokenAddress);
                 if (!userInfo) {
-                    alert("Failed to fetch user info for max mint calculation.");
+                    alert("Failed to fetch user info for max mint calculation. Please refresh and try again.");
                     return;
                 }
                 const boneContributedEther = Number(web3.utils.fromWei(userInfo.boneContributed, 'ether'));
@@ -827,11 +851,10 @@
                     alert("No BONE available to mint!");
                     return;
                 }
-                // Ensure integer (round down)
                 document.getElementById('mintAmount').value = Math.floor(maxMintAmount);
             } catch (error) {
                 console.error("Failed to set max mint:", error);
-                alert("Failed to calculate max mint amount.");
+                alert("Failed to calculate max mint amount: " + error.message);
             }
         }
 
@@ -844,7 +867,7 @@
             try {
                 const userInfo = await fetchUserInfoWithRetry(tokenAddress);
                 if (!userInfo) {
-                    alert("Failed to fetch user info for max refund calculation.");
+                    alert("Failed to fetch user info for max refund calculation. Please refresh and try again.");
                     return;
                 }
                 const refundableBalanceEther = Number(web3.utils.fromWei(userInfo.refundableBalance.toString(), 'ether'));
@@ -852,12 +875,11 @@
                     alert("No tokens available to refund!");
                     return;
                 }
-                // Round down to nearest multiple of TOKENS_PER_BONE
                 const maxRefundAmount = Math.floor(refundableBalanceEther / TOKENS_PER_BONE) * TOKENS_PER_BONE;
                 document.getElementById('refundAmount').value = maxRefundAmount;
             } catch (error) {
                 console.error("Failed to set max refund:", error);
-                alert("Failed to calculate max refund amount.");
+                alert("Failed to calculate max refund amount: " + error.message);
             }
         }
 
@@ -867,7 +889,6 @@
             const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
             const mintAmount = document.getElementById('mintAmount').value.trim();
 
-            // Input validation
             if (!web3.utils.isAddress(tokenAddress)) {
                 alert("Invalid token address!");
                 return;
@@ -888,8 +909,6 @@
                 const weiAmount = web3.utils.toWei(mintAmount, 'ether');
                 const tx = await currentTokenContract.methods.mint(weiAmount).send({ from: accounts[0], value: weiAmount });
                 status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
-                
-                // Wait for network sync before querying
                 await delay(5000);
                 queryToken();
             } catch (error) {
@@ -918,7 +937,6 @@
             const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
             const refundAmount = document.getElementById('refundAmount').value.trim();
 
-            // Input validation
             if (!web3.utils.isAddress(tokenAddress)) {
                 alert("Invalid token address!");
                 return;
@@ -945,8 +963,6 @@
                 const weiAmount = web3.utils.toWei(refundAmount, 'ether');
                 const tx = await currentTokenContract.methods.refund(weiAmount).send({ from: accounts[0] });
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
-                
-                // Wait for network sync before querying
                 await delay(5000);
                 queryToken();
             } catch (error) {
