@@ -651,6 +651,22 @@
             }
         }
 
+        async function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function queryTokenWithRetry(tokenAddress, retries = 2, delayMs = 2000) {
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    const tokenStatus = await launchpadContract.methods.getTokenStatus(tokenAddress).call();
+                    return tokenStatus;
+                } catch (error) {
+                    if (i === retries) throw error;
+                    await delay(delayMs);
+                }
+            }
+        }
+
         async function queryToken() {
             const section = document.getElementById('queryTokenSection');
             const status = document.getElementById('actionStatus');
@@ -663,8 +679,8 @@
                 section.classList.add('loading');
                 status.innerText = "Querying token...";
                 
-                // Verify if token is valid through Launchpad
-                const tokenStatus = await launchpadContract.methods.getTokenStatus(tokenAddress).call();
+                // Verify if token is valid through Launchpad with retry
+                const tokenStatus = await queryTokenWithRetry(tokenAddress);
                 
                 // Initialize token contract
                 currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
@@ -695,7 +711,13 @@
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
                 console.error(error);
-                status.innerText = "Failed to query token: " + (error.message.includes("Invalid token") ? "This token was not created by the Launchpad." : error.message);
+                let errorMsg = error.message;
+                if (error.message.includes("Invalid token")) {
+                    errorMsg = "This token was not created by the Launchpad.";
+                } else if (error.message.includes("network")) {
+                    errorMsg = "Network error, please try again later.";
+                }
+                status.innerText = `Failed to query token: ${errorMsg}`;
                 clearTokenInfo();
             } finally {
                 section.classList.remove('loading');
@@ -730,7 +752,8 @@
                 const tx = await currentTokenContract.methods.mint(weiAmount).send({ from: accounts[0], value: weiAmount });
                 status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
-                // Refresh token info
+                // Wait for network sync before querying
+                await delay(3000);
                 queryToken();
             } catch (error) {
                 console.error(error);
@@ -786,7 +809,8 @@
                 const tx = await currentTokenContract.methods.refund(weiAmount).send({ from: accounts[0] });
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
-                // Refresh token info
+                // Wait for network sync before querying
+                await delay(3000);
                 queryToken();
             } catch (error) {
                 console.error(error);
