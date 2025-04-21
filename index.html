@@ -698,13 +698,11 @@
                         currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
                     }
                     const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
-                    const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
-                    const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
-                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
-                    return { tokenBalance, ownerAllocation, refundableBalance };
+                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
+                    return { tokenBalance };
                 } catch (error) {
+                    console.error("Failed to fetch user info:", error.message);
                     if (i === retries) {
-                        console.error("Failed to fetch user info after retries:", error);
                         document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
                         return null;
                     }
@@ -725,37 +723,38 @@
                 section.classList.add('loading');
                 status.innerText = "Querying token...";
 
-                const tokenStatus = await queryTokenWithRetry(tokenAddress);
-
-                const progress = (Number(tokenStatus.minted) / Number(tokenStatus.mintLimit) * 100).toFixed(2);
-                document.getElementById('tokenNameDisplay').innerText = `Name: ${tokenStatus.name}`;
-                document.getElementById('tokenSymbolDisplay').innerText = `Symbol: ${tokenStatus.symbol}`;
-                document.getElementById('tokenStatusDisplay').innerText = `Status: ${tokenStatus.started ? 'Launched' : 'Minting'}`;
-                document.getElementById('tokenMintedDisplay').innerText = `Minted: ${web3.utils.fromWei(tokenStatus.minted, 'ether')} / ${web3.utils.fromWei(tokenStatus.mintLimit, 'ether')}`;
-                document.getElementById('tokenProgressBar').style.width = `${progress}%`;
-                document.getElementById('tokenProgressDisplay').innerText = `Progress: ${progress}%`;
+                let tokenStatus;
+                try {
+                    tokenStatus = await queryTokenWithRetry(tokenAddress);
+                    const progress = (Number(tokenStatus.minted) / Number(tokenStatus.mintLimit) * 100).toFixed(2);
+                    document.getElementById('tokenNameDisplay').innerText = `Name: ${tokenStatus.name}`;
+                    document.getElementById('tokenSymbolDisplay').innerText = `Symbol: ${tokenStatus.symbol}`;
+                    document.getElementById('tokenStatusDisplay').innerText = `Status: ${tokenStatus.started ? 'Launched' : 'Minting'}`;
+                    document.getElementById('tokenMintedDisplay').innerText = `Minted: ${web3.utils.fromWei(tokenStatus.minted, 'ether')} / ${web3.utils.fromWei(tokenStatus.mintLimit, 'ether')}`;
+                    document.getElementById('tokenProgressBar').style.width = `${progress}%`;
+                    document.getElementById('tokenProgressDisplay').innerText = `Progress: ${progress}%`;
+                } catch (error) {
+                    console.error("Failed to fetch token status:", error.message);
+                    document.getElementById('tokenNameDisplay').innerText = "Name: --";
+                    document.getElementById('tokenSymbolDisplay').innerText = "Symbol: --";
+                    document.getElementById('tokenStatusDisplay').innerText = "Status: --";
+                    document.getElementById('tokenMintedDisplay').innerText = "Minted: -- / --";
+                    document.getElementById('tokenProgressBar').style.width = "0%";
+                    document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
+                }
 
                 const userInfo = await fetchUserInfoWithRetry(tokenAddress);
-
                 await fetchBoneBalance();
 
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
-                mintButton.disabled = tokenStatus.started;
-                refundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
+                mintButton.disabled = tokenStatus ? tokenStatus.started : true;
+                refundButton.disabled = tokenStatus ? tokenStatus.started : true;
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
                 console.error(error);
-                let errorMsg = error.message;
-                if (error.message.includes("Invalid token")) {
-                    errorMsg = "This token was not created by the Launchpad.";
-                } else if (error.message.includes("network")) {
-                    errorMsg = "Network error, please try again later.";
-                } else {
-                    errorMsg = "Failed to query token, please try again.";
-                }
-                status.innerText = errorMsg;
+                status.innerText = "Failed to query token: " + error.message;
                 await fetchUserInfoWithRetry(tokenAddress);
                 await fetchBoneBalance();
             } finally {
