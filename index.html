@@ -698,8 +698,16 @@
                         currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
                     }
                     const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                    const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+                    let ownerAllocation = '0';
+                    try {
+                        ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                    } catch (e) {
+                        console.warn("ownerAllocationClaimed not available:", e.message);
+                    }
+                    const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
                     document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')}`;
-                    return { tokenBalance };
+                    return { tokenBalance, boneContributed, ownerAllocation, refundableBalance };
                 } catch (error) {
                     console.error("Failed to fetch user info:", error.message);
                     if (i === retries) {
@@ -749,7 +757,7 @@
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
                 mintButton.disabled = tokenStatus ? tokenStatus.started : true;
-                refundButton.disabled = tokenStatus ? tokenStatus.started : true;
+                refundButton.disabled = !userInfo || tokenStatus?.started || Number(userInfo.refundableBalance) <= 0;
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
@@ -817,6 +825,10 @@
             const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
             const refundAmount = document.getElementById('refundAmount').value.trim();
 
+            if (!accounts || !accounts[0]) {
+                alert("Please connect your wallet first!");
+                return;
+            }
             if (!web3.utils.isAddress(tokenAddress)) {
                 alert("Invalid token address!");
                 return;
@@ -825,38 +837,67 @@
                 alert(`Please enter a valid token amount (minimum ${TOKENS_PER_BONE}, multiples of ${TOKENS_PER_BONE})!`);
                 return;
             }
-            const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
-            const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
-            const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
-            if (Number(web3.utils.fromWei(tokenBalance, 'ether')) < Number(refundAmount)) {
-                alert("Insufficient token balance for refund!");
-                return;
-            }
-            if (Number(web3.utils.fromWei(refundableBalance.toString(), 'ether')) < Number(refundAmount)) {
-                alert("Cannot refund creator's allocation (20M tokens)!");
-                return;
-            }
 
             try {
                 section.classList.add('loading');
+                status.innerText = "Checking balance...";
+
+                if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
+                    currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+                }
+
+                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+                let ownerAllocation = '0';
+                try {
+                    ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                } catch (e) {
+                    console.warn("ownerAllocationClaimed not available:", e.message);
+                }
+                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
+                const refundAmountWei = web3.utils.toWei(refundAmount, 'ether');
+                const boneRequired = Number(refundAmount) / TOKENS_PER_BONE;
+
+                if (Number(tokenBalance) < Number(refundAmountWei)) {
+                    alert(`Insufficient token balance! You have ${web3.utils.fromWei(tokenBalance, 'ether')} tokens.`);
+                    return;
+                }
+                if (Number(refundableBalance) < Number(refundAmountWei)) {
+                    alert(`Cannot refund creator's allocation (20M tokens)! Refundable: ${web3.utils.fromWei(refundableBalance, 'ether')} tokens.`);
+                    return;
+                }
+                if (Number(web3.utils.fromWei(boneContributed, 'ether')) < boneRequired) {
+                    alert(`Insufficient BONE contributed! You have contributed ${web3.utils.fromWei(boneContributed, 'ether')} BONE.`);
+                    return;
+                }
+
                 status.innerText = "Refunding tokens...";
-                const weiAmount = web3.utils.toWei(refundAmount, 'ether');
-                const tx = await currentTokenContract.methods.refund(weiAmount).send({ from: accounts[0] });
+                const started = await currentTokenContract.methods.started().call();
+                if (started) {
+                    alert("Token has already launched, refund not allowed!");
+                    return;
+                }
+
+                const tx = await currentTokenContract.methods.refund(refundAmountWei).send({ from: accounts[0] });
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
                 
                 await delay(5000);
                 queryToken();
             } catch (error) {
-                console.error(error);
+                console.error("Refund error:", error);
                 let errorMsg = error.message;
                 if (error.message.includes("refund not allowed")) {
                     errorMsg = "Token has already launched, refund not allowed!";
                 } else if (error.message.includes("multiple of 50,000")) {
                     errorMsg = `Token amount must be a multiple of ${TOKENS_PER_BONE}!`;
+                } else if (error.message.includes("token amount too low")) {
+                    errorMsg = `Token amount must be at least ${TOKENS_PER_BONE}!`;
+                } else if (error.message.includes("insufficient balance")) {
+                    errorMsg = "Insufficient token balance or BONE contributed!";
                 } else if (error.message.includes("owner allocation")) {
                     errorMsg = "Cannot refund creator's allocation (20M tokens)!";
-                } else if (error.message.includes("insufficient balance")) {
-                    errorMsg = "Insufficient token balance!";
+                } else if (error.message.includes("user rejected")) {
+                    errorMsg = "Transaction rejected by user!";
                 }
                 status.innerText = `Failed to refund: ${errorMsg}`;
             } finally {
