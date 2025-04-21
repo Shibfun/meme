@@ -198,14 +198,12 @@
 <body>
     <div class="container">
         <h1>Meme Token Launchpad</h1>
-
         <div class="section">
             <h2>Connect to Shibarium</h2>
             <button id="connectButton" class="button">Connect Wallet</button>
             <p>Wallet: <span id="walletAddress" class="wallet-info">Not connected</span></p>
             <div id="networkStatus" class="status">Click to connect...</div>
         </div>
-
         <div class="section" id="createTokenSection">
             <h2>Create Meme Token</h2>
             <input type="text" id="tokenName" placeholder="Token Name (e.g., DogeCoin)">
@@ -213,7 +211,6 @@
             <button id="createToken" class="button">Create Token</button>
             <div id="createStatus" class="status"></div>
         </div>
-
         <div class="section" id="myTokensSection">
             <h2>My Created Tokens</h2>
             <button id="fetchMyTokens" class="button">Fetch My Tokens</button>
@@ -230,7 +227,6 @@
             </table>
             <div id="tokensStatus" class="status"></div>
         </div>
-
         <div class="section" id="queryTokenSection">
             <h2>Query Token Info</h2>
             <input type="text" id="queryTokenAddress" placeholder="Token Address">
@@ -263,59 +259,39 @@
                 <div id="actionStatus" class="status"></div>
             </div>
         </div>
-
         <div class="how-it-works">
             <h2>How It Works?</h2>
-            <p>Launch your meme token on Shibarium with our Meme Token Launchpad! It’s fast, fair, and powered by the BONE community. Here’s the WOOF-tastic process with all the juicy details:</p>
+            <p>Launch your meme token on Shibarium with our Meme Token Launchpad! It’s fast, fair, and powered by the BONE community. Here’s the process:</p>
             <ul>
-                <li><strong>Connect Your Wallet</strong>: Fire up MetaMask and connect to the Shibarium network (chain ID: 109). Make sure your wallet has enough <span class="highlight">BONE</span> to cover gas fees for creating and managing your token. No BONE? Grab some on WoofSwap, pup!</li>
-                <li><strong>Create Your Token</strong>: Enter a catchy name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”) to deploy your meme token. Here’s how the <span class="highlight">1 billion total supply</span> (1,000,000,000 tokens, 18 decimals) is allocated at creation:
+                <li><strong>Connect Your Wallet</strong>: Use MetaMask to connect to Shibarium (chain ID: 109). Ensure you have enough <span class="highlight">BONE</span> for gas fees.</li>
+                <li><strong>Create Your Token</strong>: Enter a name (e.g., “ShibaRocket”) and symbol (e.g., “SHK”). Total supply is 1 billion tokens:
                     <ul>
-                        <li><span class="highlight">2% (20,000,000 tokens)</span> is minted directly to you, the creator, as a reward for your pawsome idea (non-refundable).</li>
-                        <li><span class="highlight">98% (980,000,000 tokens)</span> is minted to the token contract, reserved for fair minting by the community and liquidity provision after launch.</li>
+                        <li><span class="highlight">2% (20M tokens)</span> minted to creator (non-refundable).</li>
+                        <li><span class="highlight">98% (980M tokens)</span> for community minting and liquidity.</li>
                     </ul>
                 </li>
-                <li><strong>Fair Minting Phase</strong>: Invite the community to mint your token by calling the mint function with <span class="highlight">BONE</span>. The rules are crystal clear:
+                <li><strong>Fair Minting</strong>: Community mints tokens with <span class="highlight">BONE</span>:
                     <ul>
-                        <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum mint: 1 BONE, multiples of 1 BONE only).</li>
-                        <li>Up to <span class="highlight">490,000,000 tokens (49% of total supply)</span> can be minted by users during this phase.</li>
-                        <li>Each wallet can contribute up to <span class="highlight">1,000 BONE</span> (equivalent to 50,000,000 tokens) to keep things fair.</li>
-                        <li>Track the minting progress in real-time under “My Created Tokens” with a shiny progress bar showing how close you are to the 490M goal!</li>
-                        <li>Before launch, users can request a refund by calling the refund function, returning their minted tokens to receive <span class="highlight">1 BONE per 50,000 tokens</span>.</li>
+                        <li><span class="highlight">1 BONE = 50,000 tokens</span> (minimum 1 BONE).</li>
+                        <li>Up to <span class="highlight">490M tokens</span> can be minted.</li>
+                        <li>Max <span class="highlight">1,000 BONE</span> per wallet.</li>
+                        <li>Users can refund tokens before launch.</li>
                     </ul>
                 </li>
-                <li><strong>Launch Your Token</strong>: Once <span class="highlight">490,000,000 tokens</span> are minted, you (the owner) can trigger the launch. Here’s what happens:
+                <li><strong>Launch Token</strong>: At 490M tokens minted, creator launches:
                     <ul>
-                        <li>The remaining <span class="highlight">490,000,000 tokens</span> (49% of total supply) held in the contract are paired with all collected BONE (up to 9,800 BONE if fully minted).</li>
-                        <li>This creates a liquidity pool on WoofSwap.</li>
-                        <li>The resulting LP tokens are sent to a secure locker address to ensure trust and transparency - Permanent lock.</li>
-                        <li>Trading begins, and your token is live on Shibarium!</li>
+                        <li>Remaining <span class="highlight">490M tokens</span> paired with collected BONE for WoofSwap liquidity.</li>
+                        <li>LP tokens locked permanently.</li>
                     </ul>
                 </li>
-                <li><strong>Query Token Status</strong>: Curious about your token or someone else’s? Enter the token address in “Query Token Info” to see:
-                    <ul>
-                        <li>Name, symbol, and launch status (minting or launched).</li>
-                        <li>Minted amount vs. the 490M mint limit, with a progress bar.</li>
-                        <li>Your BONE contribution and token balance.</li>
-                        <li>Perfect for tracking your project or scouting other WOOF-worthy tokens!</li>
-                    </ul>
-                </li>
-                <li><strong>Fair, Secure, and Transparent</strong>: Our Launchpad is built on Shibarium for low fees and high speed. Key features:
-                    <ul>
-                        <li><span class="highlight">Contract checks</span> ensure only real users (not bots) can mint or refund.</li>
-                        <li><span class="highlight">Clear tokenomics</span>: 2% to creator (non-refundable), 49% to fair minting, 49% to liquidity.</li>
-                        <li>Ownership can be renounced or transferred for added flexibility.</li>
-                        <li>No direct BONE transfers; mint and refund via dedicated functions for safety.</li>
-                    </ul>
-                </li>
+                <li><strong>Query Token</strong>: Check token details (name, symbol, status, balance) by entering its address.</li>
+                <li><strong>Fair & Secure</strong>: Built on Shibarium for low fees, with transparent tokenomics and secure mint/refund functions.</li>
             </ul>
         </div>
-
         <div class="footer">
             Powered by <a href="https://shibarium.shib.io/" target="_blank">Shibarium</a> | Meme Token Launchpad © 2025
         </div>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/web3@1.7.0/dist/web3.min.js"></script>
     <script>
         let web3, accounts, launchpadContract, currentTokenContract;
@@ -325,214 +301,33 @@
         const MIN_MINT = 1;
 
         const launchpadABI = [
-            {
-                "inputs": [],
-                "name": "launchLength",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "_idx", "type": "uint256"}],
-                "name": "launchDetail",
-                "outputs": [
-                    {"internalType": "address", "name": "", "type": "address"},
-                    {"internalType": "uint256", "name": "", "type": "uint256"}
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address", "name": "_token", "type": "address"}],
-                "name": "tokenLaunch",
-                "outputs": [
-                    {"internalType": "bool", "name": "", "type": "bool"},
-                    {"internalType": "uint256", "name": "", "type": "uint256"}
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {"internalType": "address", "name": "user", "type": "address"},
-                    {"internalType": "uint256", "name": "page", "type": "uint256"},
-                    {"internalType": "uint256", "name": "pageSize", "type": "uint256"}
-                ],
-                "name": "getUserLaunchedTokens",
-                "outputs": [{"internalType": "address[]", "name": "", "type": "address[]"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address", "name": "user", "type": "address"}],
-                "name": "getUserLaunchedTokenCount",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address payable", "name": "token", "type": "address"}],
-                "name": "getTokenStatus",
-                "outputs": [
-                    {
-                        "components": [
-                            {"internalType": "bool", "name": "started", "type": "bool"},
-                            {"internalType": "uint256", "name": "minted", "type": "uint256"},
-                            {"internalType": "uint256", "name": "mintLimit", "type": "uint256"},
-                            {"internalType": "string", "name": "name", "type": "string"},
-                            {"internalType": "string", "name": "symbol", "type": "string"}
-                        ],
-                        "internalType": "struct MemeLaunchpad.TokenStatus",
-                        "name": "",
-                        "type": "tuple"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {"internalType": "string", "name": "_name", "type": "string"},
-                    {"internalType": "string", "name": "_symbol", "type": "string"}
-                ],
-                "name": "launchMeme",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
+            {"inputs":[],"name":"launchLength","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"_idx","type":"uint256"}],"name":"launchDetail","outputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"_token","type":"address"}],"name":"tokenLaunch","outputs":[{"internalType":"bool","name":"","type":"bool"},{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"user","type":"address"},{"internalType":"uint256","name":"page","type":"uint256"},{"internalType":"uint256","name":"pageSize","type":"uint256"}],"name":"getUserLaunchedTokens","outputs":[{"internalType":"address[]","name":"","type":"address[]"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserLaunchedTokenCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address payable","name":"token","type":"address"}],"name":"getTokenStatus","outputs":[{"components":[{"internalType":"bool","name":"started","type":"bool"},{"internalType":"uint256","name":"minted","type":"uint256"},{"internalType":"uint256","name":"mintLimit","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"}],"internalType":"struct MemeLaunchpad.TokenStatus","name":"","type":"tuple"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"string","name":"_symbol","type":"string"}],"name":"launchMeme","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"nonpayable","type":"function"}
         ];
 
         const memeABI = [
-            {
-                "inputs": [
-                    {"internalType": "string", "name": "_name", "type": "string"},
-                    {"internalType": "string", "name": "_symbol", "type": "string"},
-                    {"internalType": "address", "name": "_owner", "type": "address"}
-                ],
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {"indexed": true, "internalType": "address", "name": "to", "type": "address"},
-                    {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"},
-                    {"indexed": false, "internalType": "uint256", "name": "boneAmount", "type": "uint256"}
-                ],
-                "name": "FairMinted",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {"indexed": true, "internalType": "address", "name": "from", "type": "address"},
-                    {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"},
-                    {"indexed": false, "internalType": "uint256", "name": "bone", "type": "uint256"}
-                ],
-                "name": "RefundEvent",
-                "type": "event"
-            },
-            {
-                "inputs": [],
-                "name": "PRICE",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "TOKENS_PER_BONE",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "TOTAL_SUPPLY",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "MINT_LIMIT",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "MAX_BONE_PER_ADDRESS",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "MIN_MINT",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
-                "name": "balanceOf",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "name": "boneContributed",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "name": "ownerAllocationClaimed",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "minted",
-                "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "started",
-                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "boneAmount", "type": "uint256"}],
-                "name": "mint",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [{"internalType": "uint256", "name": "tokenAmount", "type": "uint256"}],
-                "name": "refund",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {"internalType": "address", "name": "to", "type": "address"},
-                    {"internalType": "uint256", "name": "value", "type": "uint256"}
-                ],
-                "name": "transfer",
-                "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
+            {"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"string","name":"_symbol","type":"string"},{"internalType":"address","name":"_owner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"boneAmount","type":"uint256"}],"name":"FairMinted","type":"event"},
+            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"bone","type":"uint256"}],"name":"RefundEvent","type":"event"},
+            {"inputs":[],"name":"PRICE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"TOKENS_PER_BONE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"TOTAL_SUPPLY","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"MINT_LIMIT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"MAX_BONE_PER_ADDRESS","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"MIN_MINT","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"boneContributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"ownerAllocationClaimed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"minted","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+            {"inputs":[],"name":"started","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"boneAmount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"payable","type":"function"},
+            {"inputs":[{"internalType":"uint256","name":"tokenAmount","type":"uint256"}],"name":"refund","outputs":[],"stateMutability":"nonpayable","type":"function"},
+            {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
         ];
 
         const shibarium = {
@@ -550,15 +345,12 @@
                     status.innerHTML = 'No wallet detected. Please install <a href="https://metamask.io" target="_blank">MetaMask</a>.';
                     throw new Error("No wallet detected");
                 }
-
                 status.innerText = "Connecting...";
                 web3 = new Web3(window.ethereum);
                 accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-
                 if (!accounts.length) {
                     throw new Error("Please unlock your wallet or connect it.");
                 }
-
                 const chainId = await web3.eth.getChainId();
                 if (chainId !== 109) {
                     try {
@@ -583,7 +375,6 @@
                         }
                     }
                 }
-
                 document.getElementById('walletAddress').innerText = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
                 launchpadContract = new web3.eth.Contract(launchpadABI, launchpadAddress);
                 status.innerText = "Connected to Shibarium";
@@ -600,7 +391,7 @@
                 const balance = await web3.eth.getBalance(accounts[0]);
                 document.getElementById('boneBalanceDisplay').innerText = `BONE Balance: ${web3.utils.fromWei(balance, 'ether')}`;
             } catch (error) {
-                console.error("Failed to fetch BONE balance:", error);
+                console.error(error);
                 document.getElementById('boneBalanceDisplay').innerText = "BONE Balance: --";
             }
         }
@@ -640,12 +431,10 @@
                 const tokens = await launchpadContract.methods.getUserLaunchedTokens(accounts[0], 0, tokenCount).call();
                 const tokensBody = document.getElementById('tokensBody');
                 tokensBody.innerHTML = '';
-
                 if (tokens.length === 0) {
                     status.innerText = "No tokens created yet!";
                     return;
                 }
-
                 for (const token of tokens) {
                     const status = await launchpadContract.methods.getTokenStatus(token).call();
                     const progress = (Number(status.minted) / Number(status.mintLimit) * 100).toFixed(2);
@@ -700,12 +489,13 @@
                     const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
                     const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
                     let ownerAllocation = '0';
+                    let refundableBalance = tokenBalance;
                     try {
                         ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                        refundableBalance = (new web3.utils.BN(tokenBalance)).sub(new web3.utils.BN(ownerAllocation)).toString();
                     } catch (e) {
                         console.warn("ownerAllocationClaimed not available:", e.message);
                     }
-                    const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
                     document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance, 'ether')})`;
                     return { tokenBalance, boneContributed, ownerAllocation, refundableBalance };
                 } catch (error) {
@@ -730,7 +520,6 @@
             try {
                 section.classList.add('loading');
                 status.innerText = "Querying token...";
-
                 let tokenStatus;
                 try {
                     tokenStatus = await queryTokenWithRetry(tokenAddress);
@@ -750,15 +539,12 @@
                     document.getElementById('tokenProgressBar').style.width = "0%";
                     document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
                 }
-
                 const userInfo = await fetchUserInfoWithRetry(tokenAddress);
                 await fetchBoneBalance();
-
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
                 mintButton.disabled = tokenStatus ? tokenStatus.started : true;
                 refundButton.disabled = !userInfo || tokenStatus?.started || Number(userInfo.refundableBalance) <= 0;
-
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
                 console.error(error);
@@ -775,7 +561,6 @@
             const status = document.getElementById('actionStatus');
             const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
             const mintAmount = document.getElementById('mintAmount').value.trim();
-
             if (!web3.utils.isAddress(tokenAddress)) {
                 alert("Invalid token address!");
                 return;
@@ -789,14 +574,12 @@
                 alert(`Total contribution cannot exceed ${MAX_BONE_PER_ADDRESS} BONE!`);
                 return;
             }
-
             try {
                 section.classList.add('loading');
                 status.innerText = "Minting tokens...";
                 const weiAmount = web3.utils.toWei(mintAmount, 'ether');
                 const tx = await currentTokenContract.methods.mint(weiAmount).send({ from: accounts[0], value: weiAmount });
                 status.innerHTML = `Minted successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
-                
                 await delay(5000);
                 queryToken();
             } catch (error) {
@@ -833,7 +616,7 @@
                 alert("Invalid token address!");
                 return;
             }
-            if (!refundAmount || isNaN(refundAmount) || Number(refundAmount) < TOKENS_PER_BONE || Number(refundAmount) % TOKENS_PER_BONE !== 0) {
+            if (!refundAmount || isNaN(refundAmount) || Number(refundAmount) <= 0 || Number(refundAmount) < TOKENS_PER_BONE || Number(refundAmount) % TOKENS_PER_BONE !== 0) {
                 alert(`Please enter a valid token amount (minimum ${TOKENS_PER_BONE}, multiples of ${TOKENS_PER_BONE})!`);
                 return;
             }
@@ -884,7 +667,6 @@
 
                 const tx = await currentTokenContract.methods.refund(refundAmountWei).send({ from: accounts[0] });
                 status.innerHTML = `Refunded successfully! <a href="${shibarium.explorerUrl}/tx/${tx.transactionHash}" target="_blank">View Transaction</a>`;
-                
                 await delay(5000);
                 queryToken();
             } catch (error) {
@@ -902,6 +684,8 @@
                     errorMsg = "Cannot refund creator's allocation (20M tokens)!";
                 } else if (error.message.includes("user rejected")) {
                     errorMsg = "Transaction rejected by user!";
+                } else if (error.message.includes("BN")) {
+                    errorMsg = "Invalid number format, please try again.";
                 }
                 status.innerText = `Failed to refund: ${errorMsg}`;
             } finally {
