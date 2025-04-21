@@ -72,6 +72,18 @@
             color: #999; 
             cursor: not-allowed; 
         }
+        .max-button { 
+            background: #3A3A3A; 
+            color: #F5A623; 
+            padding: 5px 10px; 
+            border-radius: 5px; 
+            font-size: 0.9em; 
+            cursor: pointer; 
+            margin-left: 10px; 
+        }
+        .max-button:hover { 
+            background: #444; 
+        }
         input { 
             width: 100%; 
             padding: 12px; 
@@ -174,6 +186,11 @@
             gap: 10px; 
             flex-wrap: wrap; 
         }
+        .input-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
         @media (max-width: 600px) {
             .container { padding: 15px; }
             .section, .how-it-works { padding: 15px; }
@@ -186,6 +203,8 @@
             .how-it-works ul { padding-left: 15px; }
             .how-it-works li { font-size: 0.9em; }
             .action-buttons { flex-direction: column; }
+            .input-group { flex-direction: column; align-items: stretch; }
+            .max-button { margin-left: 0; margin-top: 5px; }
         }
     </style>
 </head>
@@ -206,7 +225,7 @@
             <input type="text" id="tokenSymbol" placeholder="Token Symbol (e.g., DOGE)">
             <button id="createToken" class="button">Create Token</button>
             <div id="createStatus" class="status"></div>
-        </div>
+        </  div>
 
         <div class="section" id="myTokensSection">
             <h2>My Created Tokens</h2>
@@ -243,13 +262,20 @@
                 </div>
                 <p id="tokenProgressDisplay">Progress: --%</p>
                 <h3>Your Info</h3>
+                <p id="boneBalanceDisplay">BONE Balance: --</p>
                 <p id="boneContributedDisplay">BONE Contributed: --</p>
                 <p id="tokenBalanceDisplay">Token Balance: --</p>
                 <h3>Mint Tokens</h3>
-                <input type="number" id="mintAmount" placeholder="BONE Amount (e.g., 1)" min="1" step="1">
+                <div class="input-group">
+                    <input type="number" id="mintAmount" placeholder="BONE Amount (e.g., 1)" min="1" step="1">
+                    <button id="maxMint" class="max-button" disabled>Max</button>
+                </div>
                 <button id="mintToken" class="button" disabled>Mint Tokens</button>
                 <h3>Refund Tokens</h3>
-                <input type="number" id="refundAmount" placeholder="Token Amount (e.g., 50000)" min="50000" step="50000">
+                <div class="input-group">
+                    <input type="number" id="refundAmount" placeholder="Token Amount (e.g., 50000)" min="50000" step="50000">
+                    <button id="maxRefund" class="max-button" disabled>Max</button>
+                </div>
                 <button id="refundToken" class="button" disabled>Refund Tokens</button>
                 <div id="actionStatus" class="status"></div>
             </div>
@@ -578,9 +604,22 @@
                 document.getElementById('walletAddress').innerText = `${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`;
                 launchpadContract = new web3.eth.Contract(launchpadABI, launchpadAddress);
                 status.innerText = "Connected to Shibarium";
+                // Fetch BONE balance after connecting
+                await fetchBoneBalance();
             } catch (error) {
                 console.error(error);
                 status.innerText = "Failed to connect: " + error.message;
+            }
+        }
+
+        async function fetchBoneBalance() {
+            try {
+                if (!accounts || accounts.length === 0) return;
+                const balance = await web3.eth.getBalance(accounts[0]);
+                document.getElementById('boneBalanceDisplay').innerText = `BONE Balance: ${web3.utils.fromWei(balance, 'ether')}`;
+            } catch (error) {
+                console.error("Failed to fetch BONE balance:", error);
+                document.getElementById('boneBalanceDisplay').innerText = "BONE Balance: --";
             }
         }
 
@@ -670,23 +709,28 @@
             }
         }
 
-        async function fetchUserInfo(tokenAddress) {
-            try {
-                if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
-                    currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+        async function fetchUserInfoWithRetry(tokenAddress, retries = 5, delayMs = 3000) {
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    if (!currentTokenContract || currentTokenContract._address.toLowerCase() !== tokenAddress.toLowerCase()) {
+                        currentTokenContract = new web3.eth.Contract(memeABI, tokenAddress);
+                    }
+                    const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
+                    const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
+                    const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
+                    const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
+                    document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
+                    document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
+                    return { boneContributed, tokenBalance, ownerAllocation, refundableBalance };
+                } catch (error) {
+                    if (i === retries) {
+                        console.error("Failed to fetch user info after retries:", error);
+                        document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
+                        document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
+                        return null;
+                    }
+                    await delay(delayMs);
                 }
-                const boneContributed = await currentTokenContract.methods.boneContributed(accounts[0]).call();
-                const tokenBalance = await currentTokenContract.methods.balanceOf(accounts[0]).call();
-                const ownerAllocation = await currentTokenContract.methods.ownerAllocationClaimed(accounts[0]).call();
-                const refundableBalance = Number(tokenBalance) - Number(ownerAllocation);
-                document.getElementById('boneContributedDisplay').innerText = `BONE Contributed: ${web3.utils.fromWei(boneContributed, 'ether')}`;
-                document.getElementById('tokenBalanceDisplay').innerText = `Token Balance: ${web3.utils.fromWei(tokenBalance, 'ether')} (Refundable: ${web3.utils.fromWei(refundableBalance.toString(), 'ether')})`;
-                return { boneContributed, tokenBalance, ownerAllocation, refundableBalance };
-            } catch (error) {
-                console.error("Failed to fetch user info:", error);
-                document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
-                document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
-                return null;
             }
         }
 
@@ -715,13 +759,20 @@
                 document.getElementById('tokenProgressDisplay').innerText = `Progress: ${progress}%`;
 
                 // Fetch user info
-                const userInfo = await fetchUserInfo(tokenAddress);
+                const userInfo = await fetchUserInfoWithRetry(tokenAddress);
+
+                // Fetch BONE balance
+                await fetchBoneBalance();
 
                 // Enable/disable buttons based on status
                 const mintButton = document.getElementById('mintToken');
                 const refundButton = document.getElementById('refundToken');
+                const maxMintButton = document.getElementById('maxMint');
+                const maxRefundButton = document.getElementById('maxRefund');
                 mintButton.disabled = tokenStatus.started;
                 refundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
+                maxMintButton.disabled = tokenStatus.started;
+                maxRefundButton.disabled = tokenStatus.started || (userInfo && userInfo.refundableBalance <= 0);
 
                 status.innerText = "Token info loaded successfully!";
             } catch (error) {
@@ -736,9 +787,64 @@
                 }
                 status.innerText = errorMsg;
                 // Fetch user info even if token status fails
-                await fetchUserInfo(tokenAddress);
+                await fetchUserInfoWithRetry(tokenAddress);
+                await fetchBoneBalance();
             } finally {
                 section.classList.remove('loading');
+            }
+        }
+
+        async function setMaxMint() {
+            const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
+            if (!web3.utils.isAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
+            try {
+                const boneBalance = await web3.eth.getBalance(accounts[0]);
+                const boneBalanceEther = Number(web3.utils.fromWei(boneBalance, 'ether'));
+                const userInfo = await fetchUserInfoWithRetry(tokenAddress);
+                if (!userInfo) {
+                    alert("Failed to fetch user info for max mint calculation.");
+                    return;
+                }
+                const boneContributedEther = Number(web3.utils.fromWei(userInfo.boneContributed, 'ether'));
+                const remainingQuota = MAX_BONE_PER_ADDRESS - boneContributedEther;
+                const maxMintAmount = Math.min(boneBalanceEther, remainingQuota);
+                if (maxMintAmount <= 0) {
+                    alert("No BONE available to mint!");
+                    return;
+                }
+                document.getElementById('mintAmount').value = Math.floor(maxMintAmount);
+            } catch (error) {
+                console.error("Failed to set max mint:", error);
+                alert("Failed to calculate max mint amount.");
+            }
+        }
+
+        async function setMaxRefund() {
+            const tokenAddress = document.getElementById('queryTokenAddress').value.trim();
+            if (!web3.utils.isAddress(tokenAddress)) {
+                alert("Invalid token address!");
+                return;
+            }
+            try {
+                const userInfo = await fetchUserInfoWithRetry(tokenAddress);
+                if (!userInfo) {
+                    alert("Failed to fetch user info for max refund calculation.");
+                    return;
+                }
+                const refundableBalanceEther = Number(web3.utils.fromWei(userInfo.refundableBalance.toString(), 'ether'));
+                if (refundableBalanceEther <= 0) {
+                    alert("No tokens available to refund!");
+                    return;
+                }
+                // Round down to nearest multiple of TOKENS_PER_BONE
+                const maxRefundAmount = Math.floor(refundableBalanceEther / TOKENS_PER_BONE) * TOKENS_PER_BONE;
+                document.getElementById('refundAmount').value = maxRefundAmount;
+            } catch (error) {
+                console.error("Failed to set max refund:", error);
+                alert("Failed to calculate max refund amount.");
             }
         }
 
@@ -855,8 +961,12 @@
             document.getElementById('tokenMintedDisplay').innerText = "Minted: -- / --";
             document.getElementById('tokenProgressBar').style.width = "0%";
             document.getElementById('tokenProgressDisplay').innerText = "Progress: --%";
+            document.getElementById('boneContributedDisplay').innerText = "BONE Contributed: --";
+            document.getElementById('tokenBalanceDisplay').innerText = "Token Balance: --";
             document.getElementById('mintToken').disabled = true;
             document.getElementById('refundToken').disabled = true;
+            document.getElementById('maxMint').disabled = true;
+            document.getElementById('maxRefund').disabled = true;
         }
 
         function copyToClipboard(text) {
@@ -875,6 +985,8 @@
         document.getElementById('refreshToken').addEventListener('click', queryToken);
         document.getElementById('mintToken').addEventListener('click', mintToken);
         document.getElementById('refundToken').addEventListener('click', refundToken);
+        document.getElementById('maxMint').addEventListener('click', setMaxMint);
+        document.getElementById('maxRefund').addEventListener('click', setMaxRefund);
 
         window.addEventListener('load', () => {
             if (!window.location.protocol.startsWith('http')) {
