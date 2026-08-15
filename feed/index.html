@@ -546,6 +546,8 @@ let userAddress = null;
 let feedContract = null;
 let wrapContract = null;
 let feedDecimal = 18;
+let rawFeedBal = '0';
+let rawWrapBal = '0';
 
 function shortAddr(a) { return a.slice(0,6) + '...' + a.slice(-4); }
 function fmtNum(v, d) {
@@ -553,6 +555,13 @@ function fmtNum(v, d) {
   if (n === 0) return '0';
   if (n < 0.000001) return '<0.000001';
   return n.toLocaleString('en-US', { maximumFractionDigits: Math.min(d, 8) });
+}
+function formatBigNumber(str) {
+  const parts = str.split('.');
+  const intPart = parts[0];
+  const decPart = parts[1] || '';
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decPart ? formatted + '.' + decPart : formatted;
 }
 
 function toast(msg, type) {
@@ -658,46 +667,42 @@ async function refreshBalances() {
   if (!userAddress || !feedContract) return;
   try {
     const feedBal = await feedContract.balanceOf(userAddress);
-    const f = ethers.formatUnits(feedBal, feedDecimal);
-    document.getElementById('balFeed').innerHTML = fmtNum(f, feedDecimal) + '<span class="unit">FEED</span>';
-    document.getElementById('depMaxLabel').textContent = fmtNum(f, feedDecimal);
+    rawFeedBal = ethers.formatUnits(feedBal, feedDecimal);
+    const f = Number(rawFeedBal);
+    document.getElementById('balFeed').innerHTML = formatBigNumber(rawFeedBal) + '<span class="unit">FEED</span>';
+    document.getElementById('depMaxLabel').textContent = formatBigNumber(rawFeedBal);
   } catch (err) {
     console.error('feedBal', err);
   }
   if (!wrapContract) return;
   try {
     const wrapBal = await wrapContract.balanceOf(userAddress);
-    const w = ethers.formatUnits(wrapBal, feedDecimal);
-    document.getElementById('balWFeed').innerHTML = fmtNum(w, feedDecimal) + '<span class="unit">wFEED</span>';
-    document.getElementById('wdMaxLabel').textContent = fmtNum(w, feedDecimal);
+    rawWrapBal = ethers.formatUnits(wrapBal, feedDecimal);
+    document.getElementById('balWFeed').innerHTML = formatBigNumber(rawWrapBal) + '<span class="unit">wFEED</span>';
+    document.getElementById('wdMaxLabel').textContent = formatBigNumber(rawWrapBal);
   } catch (err) {
     console.error('wrapBal', err);
   }
 }
 
 function onDepositInput() {
-  const v = parseFloat(document.getElementById('inputDeposit').value) || 0;
-  document.getElementById('receiveAmount').textContent = fmtNum(v, feedDecimal) + ' wFEED';
-  const maxStr = document.getElementById('depMaxLabel').textContent;
-  const max = parseFloat(maxStr) || 0;
-  document.getElementById('btnDeposit').disabled = !(v > 0 && v <= max);
+  const v = document.getElementById('inputDeposit').value.trim();
+  const n = parseFloat(v);
+  document.getElementById('receiveAmount').textContent = v ? formatBigNumber(v) + ' wFEED' : '0 wFEED';
+  document.getElementById('btnDeposit').disabled = !(n > 0);
 }
 
 function onWithdrawInput() {
-  const v = parseFloat(document.getElementById('inputWithdraw').value) || 0;
-  document.getElementById('receiveAmountWd').textContent = fmtNum(v, feedDecimal) + ' FEED';
-  const maxStr = document.getElementById('wdMaxLabel').textContent;
-  const max = parseFloat(maxStr) || 0;
-  document.getElementById('btnWithdraw').disabled = !(v > 0 && v <= max);
+  const v = document.getElementById('inputWithdraw').value.trim();
+  const n = parseFloat(v);
+  document.getElementById('receiveAmountWd').textContent = v ? formatBigNumber(v) + ' FEED' : '0 FEED';
+  document.getElementById('btnWithdraw').disabled = !(n > 0);
 }
 
 function setMax(t) {
-  const label = t === 'deposit' ? 'depMaxLabel' : 'wdMaxLabel';
   const input = t === 'deposit' ? 'inputDeposit' : 'inputWithdraw';
-  const val = document.getElementById(label).textContent.replace(/,/g, '');
-  const n = parseFloat(val);
-  if (isNaN(n) || n <= 0) return;
-  document.getElementById(input).value = val;
+  const raw = t === 'deposit' ? rawFeedBal : rawWrapBal;
+  document.getElementById(input).value = raw;
   if (t === 'deposit') onDepositInput(); else onWithdrawInput();
 }
 
@@ -742,8 +747,6 @@ async function doDeposit() {
   } finally {
     btn.classList.remove('loading');
     await refreshBalances();
-    const fBal = await feedContract.balanceOf(userAddress);
-    document.getElementById('btnDeposit').disabled = true;
     onDepositInput();
   }
 }
