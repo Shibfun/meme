@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wrapped FEED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --bg2: #111119;
+  --bg3: #1a1a26;
+  --surface: #16161f;
+  --border: #2a2a3a;
+  --border-hi: #3d3d55;
+  --text: #e8e8f0;
+  --text2: #8888a0;
+  --text3: #55556a;
+  --accent: #7c5aff;
+  --accent2: #a78bfa;
+  --accent-glow: rgba(124, 90, 255, 0.15);
+  --green: #34d399;
+  --green-bg: rgba(52, 211, 153, 0.08);
+  --red: #f87171;
+  --red-bg: rgba(248, 113, 113, 0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 16px; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 10%, rgba(124, 90, 255, 0.06), transparent),
+    radial-gradient(ellipse 500px 500px at 80% 80%, rgba(124, 90, 255, 0.04), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input { font-family: inherit; outline: none; border: none; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #5b3cc4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(124, 90, 255, 0.3);
+}
+.logo-text {
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.logo-text span { color: var(--text3); font-weight: 400; margin-left: 6px; font-size: 13px; }
+
+.btn-connect {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-connect:hover { border-color: var(--accent); background: var(--accent-glow); }
+.btn-connect.connected {
+  background: var(--green-bg);
+  border-color: rgba(52, 211, 153, 0.25);
+  color: var(--green);
+}
+.btn-connect .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  display: none;
+}
+.btn-connect.connected .dot { display: block; animation: pulse 2s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.balances {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.bal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.bal-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.3;
+}
+.bal-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.bal-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  word-break: break-all;
+}
+.bal-value .unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text2);
+  margin-left: 6px;
+}
+
+.tabs {
+  display: flex;
+  background: var(--bg2);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.tab {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text3);
+  background: transparent;
+  transition: all 0.25s;
+  position: relative;
+}
+.tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.tab:hover:not(.active) { color: var(--text2); }
+.tab .arrow {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  display: none;
+}
+.panel.active { display: block; animation: fadeIn 0.2s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 20px;
+}
+.panel-title strong { color: var(--text); }
+
+.input-group {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  transition: border-color 0.2s;
+  margin-bottom: 16px;
+}
+.input-group:focus-within { border-color: var(--accent); }
+.input-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.input-label {
+  font-size: 12px;
+  color: var(--text3);
+  font-weight: 500;
+}
+.input-balance {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text3);
+  cursor: pointer;
+}
+.input-balance:hover { color: var(--accent2); }
+.input-field {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.input-field::placeholder { color: var(--text3); }
+
+.btn-max {
+  background: var(--accent-glow);
+  color: var(--accent2);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+.btn-max:hover { background: rgba(124, 90, 255, 0.25); }
+
+.btn-action {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-action.primary {
+  background: linear-gradient(135deg, var(--accent), #5b3cc4);
+  color: #fff;
+  box-shadow: 0 4px 24px rgba(124, 90, 255, 0.3);
+}
+.btn-action.primary:hover {
+  box-shadow: 0 6px 32px rgba(124, 90, 255, 0.45);
+  transform: translateY(-1px);
+}
+.btn-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.btn-action .spinner {
+  display: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin: 0 auto;
+}
+.btn-action.loading .btn-text { display: none; }
+.btn-action.loading .spinner { display: inline-block; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { font-size: 13px; color: var(--text3); }
+.info-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 280px;
+  animation: slideIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast.success { border-color: rgba(52, 211, 153, 0.3); }
+.toast.success .toast-icon { color: var(--green); }
+.toast.error { border-color: rgba(248, 113, 113, 0.3); }
+.toast.error .toast-icon { color: var(--red); }
+.toast.info { border-color: rgba(124, 90, 255, 0.3); }
+.toast.info .toast-icon { color: var(--accent2); }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.rate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--green-bg);
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 50px;
+  margin-bottom: 20px;
+}
+
+.disconnected-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: var(--radius);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text3);
+  z-index: 2;
+}
+.panel-wrap { position: relative; }
+.disconnected-overlay.show { display: flex; }
+
+.footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 12px;
+  color: var(--text3);
+}
+.footer a { color: var(--accent2); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+@media (max-width: 500px) {
+  .app { padding: 16px 12px 48px; }
+  .bal-value { font-size: 17px; }
+  .input-field { font-size: 24px; }
+  .header { margin-bottom: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="toast-container" id="toasts"></div>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">wF</div>
+      <div class="logo-text">Wrapped FEED<span>Shibarium</span></div>
+    </div>
+    <button class="btn-connect" id="btnConnect" onclick="connectWallet()">
+      <span class="dot"></span>
+      <span id="connectText">Connect Wallet</span>
+    </button>
+  </div>
+
+  <div class="balances">
+    <div class="bal-card">
+      <div class="bal-label">FEED Balance</div>
+      <div class="bal-value" id="balFeed">---<span class="unit">FEED</span></div>
+    </div>
+    <div class="bal-card">
+      <div class="bal-label">wFEED Balance</div>
+      <div class="bal-value" id="balWFeed">---<span class="unit">wFEED</span></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabDeposit" onclick="switchTab('deposit')">
+      <span class="arrow">&#9660;</span>Deposit
+    </button>
+    <button class="tab" id="tabWithdraw" onclick="switchTab('withdraw')">
+      <span class="arrow">&#9650;</span>Withdraw
+    </button>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel active" id="panelDeposit">
+      <div class="rate-badge">1 FEED = 1 wFEED</div>
+      <div class="panel-title">Wrap your <strong>FEED</strong> to get <strong>wFEED</strong></div>
+      <div class="input-group">
+        <div class="input-row">
+          <span class="input-label">Amount</span>
+          <span class="input-balance" onclick="setMax('deposit')">
+            <span id="depMaxLabel">---</span> available
+          </span>
+        </div>
+        <div class="input-row">
+          <input type="number" class="input-field" id="inputDeposit" placeholder="0.0" min="0" step="any" oninput="onDepositInput()">
+          <button class="btn-max" onclick="setMax('deposit')">MAX</button>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">You receive</span>
+        <span class="info-value" id="receiveAmount">0 wFEED</span>
+      </div>
+      <div style="height:16px"></div>
+      <button class="btn-action primary" id="btnDeposit" onclick="doDeposit()" disabled>
+        <span class="btn-text">Deposit</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+    <div class="panel" id="panelWithdraw">
+      <div class="rate-badge">1 wFEED = 1 FEED</div>
+      <div class="panel-title">Unwrap your <strong>wFEED</strong> to get <strong>FEED</strong></div>
+      <div class="input-group">
+        <div class="input-row">
+          <span class="input-label">Amount</span>
+          <span class="input-balance" onclick="setMax('withdraw')">
+            <span id="wdMaxLabel">---</span> available
+          </span>
+        </div>
+        <div class="input-row">
+          <input type="number" class="input-field" id="inputWithdraw" placeholder="0.0" min="0" step="any" oninput="onWithdrawInput()">
+          <button class="btn-max" onclick="setMax('withdraw')">MAX</button>
+        </div>
+      </div>
+      <div class="info-row">
+        <span class="info-label">You receive</span>
+        <span class="info-value" id="receiveAmountWd">0 FEED</span>
+      </div>
+      <div style="height:16px"></div>
+      <button class="btn-action primary" id="btnWithdraw" onclick="doWithdraw()" disabled>
+        <span class="btn-text">Withdraw</span>
+        <span class="spinner"></span>
+      </button>
+    </div>
+
+    <div class="disconnected-overlay" id="overlay">
+      Connect wallet to continue
+    </div>
+  </div>
+
+  <div class="footer">
+    Shibarium Network &middot; Wrapped FEED
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script>
+const FEED_ADDRESS = '0xe9Cb2D7ADC24Fc59FE00D6C0A0669BDF16805Fe0';
+const WRAP_ADDRESS = '';
+const CHAIN_ID = '0x6d';
+const CHAIN_ID_DEC = 109;
+const CHAIN_NAME = 'Shibarium';
+const RPC_URL = 'https://rpc.shibarium.shib.io';
+const BONE_SYMBOL = 'BONE';
+const EXPLORER = 'https://www.shibariumscan.io';
+
+const ERC20_ABI = [
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+  'function balanceOf(address) view returns (uint256)',
+  'function allowance(address,address) view returns (uint256)',
+  'function approve(address,uint256) returns (bool)',
+  'function transfer(address,uint256) returns (bool)',
+  'function totalSupply() view returns (uint256)'
+];
+
+const WRAP_ABI = [
+  'function deposit(uint256)',
+  'function withdraw(uint256)',
+  'function balanceOf(address) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
+  'function FEED() view returns (address)',
+  'event Deposit(address indexed from, uint256 amount)',
+  'event Withdrawal(address indexed to, uint256 amount)'
+];
+
+let provider = null;
+let signer = null;
+let userAddress = null;
+let feedContract = null;
+let wrapContract = null;
+let feedDecimal = 18;
+
+function shortAddr(a) { return a.slice(0,6) + '...' + a.slice(-4); }
+function fmtNum(v, d) {
+  const n = Number(v);
+  if (n === 0) return '0';
+  if (n < 0.000001) return '<0.000001';
+  return n.toLocaleString('en-US', { maximumFractionDigits: Math.min(d, 8) });
+}
+
+function toast(msg, type) {
+  const c = document.getElementById('toasts');
+  const icons = { success: '\u2713', error: '\u2717', info: '\u25CF' };
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<span class="toast-icon">' + (icons[type]||'') + '</span>' + msg;
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 4000);
+}
+
+function switchTab(t) {
+  document.getElementById('tabDeposit').classList.toggle('active', t === 'deposit');
+  document.getElementById('tabWithdraw').classList.toggle('active', t === 'withdraw');
+  document.getElementById('panelDeposit').classList.toggle('active', t === 'deposit');
+  document.getElementById('panelWithdraw').classList.toggle('active', t === 'withdraw');
+}
+
+function showOverlay(show) {
+  document.getElementById('overlay').classList.toggle('show', show);
+}
+
+async function connectWallet() {
+  if (userAddress) { disconnectWallet(); return; }
+  if (typeof window.ethereum === 'undefined') {
+    toast('No wallet detected. Install MetaMask or another Web3 wallet.', 'error');
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (!accounts || accounts.length === 0) { toast('Connection rejected.', 'error'); return; }
+
+    let chainIdHex;
+    try {
+      chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
+    } catch(e) { chainIdHex = '0x1'; }
+
+    if (chainIdHex !== CHAIN_ID) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: CHAIN_ID }]
+        });
+      } catch (switchErr) {
+        if (switchErr.code === 4902) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: CHAIN_ID,
+              chainName: CHAIN_NAME,
+              nativeCurrency: { name: 'BONE', symbol: BONE_SYMBOL, decimals: 18 },
+              rpcUrls: [RPC_URL],
+              blockExplorerUrls: [EXPLORER]
+            }]
+          });
+        } else {
+          toast('Wrong network. Please switch to Shibarium.', 'error');
+          return;
+        }
+      }
+    }
+
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+
+    feedContract = new ethers.Contract(FEED_ADDRESS, ERC20_ABI, signer);
+    wrapContract = new ethers.Contract(WRAP_ADDRESS, WRAP_ABI, signer);
+
+    try {
+      feedDecimal = Number(await feedContract.decimals());
+    } catch(e) { feedDecimal = 18; }
+
+    document.getElementById('btnConnect').classList.add('connected');
+    document.getElementById('connectText').textContent = shortAddr(userAddress);
+    showOverlay(false);
+    toast('Wallet connected', 'success');
+    await refreshBalances();
+  } catch (err) {
+    console.error(err);
+    toast('Connection failed: ' + (err.message || 'Unknown error'), 'error');
+  }
+}
+
+function disconnectWallet() {
+  provider = null; signer = null; userAddress = null;
+  feedContract = null; wrapContract = null;
+  document.getElementById('btnConnect').classList.remove('connected');
+  document.getElementById('connectText').textContent = 'Connect Wallet';
+  document.getElementById('balFeed').innerHTML = '---<span class="unit">FEED</span>';
+  document.getElementById('balWFeed').innerHTML = '---<span class="unit">wFEED</span>';
+  document.getElementById('depMaxLabel').textContent = '---';
+  document.getElementById('wdMaxLabel').textContent = '---';
+  document.getElementById('btnDeposit').disabled = true;
+  document.getElementById('btnWithdraw').disabled = true;
+  showOverlay(true);
+}
+
+async function refreshBalances() {
+  if (!userAddress || !feedContract || !wrapContract) return;
+  try {
+    const [feedBal, wrapBal] = await Promise.all([
+      feedContract.balanceOf(userAddress),
+      wrapContract.balanceOf(userAddress)
+    ]);
+    const f = ethers.formatUnits(feedBal, feedDecimal);
+    const w = ethers.formatUnits(wrapBal, feedDecimal);
+    document.getElementById('balFeed').innerHTML = fmtNum(f, feedDecimal) + '<span class="unit">FEED</span>';
+    document.getElementById('balWFeed').innerHTML = fmtNum(w, feedDecimal) + '<span class="unit">wFEED</span>';
+    document.getElementById('depMaxLabel').textContent = fmtNum(f, feedDecimal);
+    document.getElementById('wdMaxLabel').textContent = fmtNum(w, feedDecimal);
+    document.getElementById('inputDeposit').value = '';
+    document.getElementById('inputWithdraw').value = '';
+    document.getElementById('receiveAmount').textContent = '0 wFEED';
+    document.getElementById('receiveAmountWd').textContent = '0 FEED';
+    document.getElementById('btnDeposit').disabled = true;
+    document.getElementById('btnWithdraw').disabled = true;
+  } catch (err) {
+    console.error('refreshBalances', err);
+    toast('Failed to fetch balances.', 'error');
+  }
+}
+
+function onDepositInput() {
+  const v = parseFloat(document.getElementById('inputDeposit').value) || 0;
+  document.getElementById('receiveAmount').textContent = fmtNum(v, feedDecimal) + ' wFEED';
+  const maxStr = document.getElementById('depMaxLabel').textContent;
+  const max = parseFloat(maxStr) || 0;
+  document.getElementById('btnDeposit').disabled = !(v > 0 && v <= max);
+}
+
+function onWithdrawInput() {
+  const v = parseFloat(document.getElementById('inputWithdraw').value) || 0;
+  document.getElementById('receiveAmountWd').textContent = fmtNum(v, feedDecimal) + ' FEED';
+  const maxStr = document.getElementById('wdMaxLabel').textContent;
+  const max = parseFloat(maxStr) || 0;
+  document.getElementById('btnWithdraw').disabled = !(v > 0 && v <= max);
+}
+
+function setMax(t) {
+  const label = t === 'deposit' ? 'depMaxLabel' : 'wdMaxLabel';
+  const input = t === 'deposit' ? 'inputDeposit' : 'inputWithdraw';
+  const val = document.getElementById(label).textContent.replace(/,/g, '');
+  const n = parseFloat(val);
+  if (isNaN(n) || n <= 0) return;
+  document.getElementById(input).value = val;
+  if (t === 'deposit') onDepositInput(); else onWithdrawInput();
+}
+
+async function doDeposit() {
+  if (!userAddress || !feedContract || !wrapContract) return;
+  const input = document.getElementById('inputDeposit');
+  const raw = input.value.trim();
+  if (!raw || parseFloat(raw) <= 0) return;
+
+  const btn = document.getElementById('btnDeposit');
+  let amount;
+  try { amount = ethers.parseUnits(raw, feedDecimal); }
+  catch(e) { toast('Invalid amount.', 'error'); return; }
+
+  btn.classList.add('loading'); btn.disabled = true;
+  try {
+    const bal = await feedContract.balanceOf(userAddress);
+    if (bal < amount) { toast('Insufficient FEED balance.', 'error'); btn.classList.remove('loading'); btn.disabled = false; return; }
+
+    toast('Checking allowance...', 'info');
+    const allow = await feedContract.allowance(userAddress, WRAP_ADDRESS);
+    if (allow < amount) {
+      toast('Approving FEED...', 'info');
+      const tx1 = await feedContract.approve(WRAP_ADDRESS, ethers.MaxUint256);
+      toast('Waiting for approval confirmation...', 'info');
+      await tx1.wait();
+      toast('Approved. Depositing...', 'success');
+    }
+
+    const tx2 = await wrapContract.deposit(amount);
+    toast('Transaction sent. Waiting for confirmation...', 'info');
+    await tx2.wait();
+
+    toast('Deposit successful!', 'success');
+    input.value = '';
+    document.getElementById('receiveAmount').textContent = '0 wFEED';
+    await refreshBalances();
+  } catch (err) {
+    console.error('deposit', err);
+    const msg = err.reason || err.shortMessage || err.message || 'Transaction failed';
+    toast('Failed: ' + msg, 'error');
+  } finally {
+    btn.classList.remove('loading');
+    await refreshBalances();
+    const fBal = await feedContract.balanceOf(userAddress);
+    document.getElementById('btnDeposit').disabled = true;
+    onDepositInput();
+  }
+}
+
+async function doWithdraw() {
+  if (!userAddress || !feedContract || !wrapContract) return;
+  const input = document.getElementById('inputWithdraw');
+  const raw = input.value.trim();
+  if (!raw || parseFloat(raw) <= 0) return;
+
+  const btn = document.getElementById('btnWithdraw');
+  let amount;
+  try { amount = ethers.parseUnits(raw, feedDecimal); }
+  catch(e) { toast('Invalid amount.', 'error'); return; }
+
+  btn.classList.add('loading'); btn.disabled = true;
+  try {
+    const tx = await wrapContract.withdraw(amount);
+    toast('Transaction sent. Waiting for confirmation...', 'info');
+    await tx.wait();
+    toast('Withdrawal successful!', 'success');
+    input.value = '';
+    document.getElementById('receiveAmountWd').textContent = '0 FEED';
+    await refreshBalances();
+  } catch (err) {
+    console.error('withdraw', err);
+    const msg = err.reason || err.shortMessage || err.message || 'Transaction failed';
+    toast('Failed: ' + msg, 'error');
+  } finally {
+    btn.classList.remove('loading');
+    await refreshBalances();
+    onWithdrawInput();
+  }
+}
+
+if (window.ethereum) {
+  window.ethereum.on('accountsChanged', (accs) => {
+    if (accs.length === 0) disconnectWallet();
+    else if (userAddress) {
+      userAddress = accs[0];
+      document.getElementById('connectText').textContent = shortAddr(userAddress);
+      refreshBalances();
+    }
+  });
+  window.ethereum.on('chainChanged', () => { window.location.reload(); });
+  showOverlay(true);
+} else {
+  showOverlay(true);
+}
+</script>
+</body>
+</html>
