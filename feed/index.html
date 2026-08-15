@@ -511,7 +511,7 @@ input[type=number] { -moz-appearance: textfield; }
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <script>
 const FEED_ADDRESS = '0xe9Cb2D7ADC24Fc59FE00D6C0A0669BDF16805Fe0';
-const WRAP_ADDRESS = '';
+const WRAP_ADDRESS = '0xC563bbbfA56A21D38eb7713C61E070eFf542bFFb';
 const CHAIN_ID = '0x6d';
 const CHAIN_ID_DEC = 109;
 const CHAIN_NAME = 'Shibarium';
@@ -621,7 +621,9 @@ async function connectWallet() {
     userAddress = await signer.getAddress();
 
     feedContract = new ethers.Contract(FEED_ADDRESS, ERC20_ABI, signer);
-    wrapContract = new ethers.Contract(WRAP_ADDRESS, WRAP_ABI, signer);
+    if (WRAP_ADDRESS) {
+      wrapContract = new ethers.Contract(WRAP_ADDRESS, WRAP_ABI, signer);
+    }
 
     try {
       feedDecimal = Number(await feedContract.decimals());
@@ -653,27 +655,23 @@ function disconnectWallet() {
 }
 
 async function refreshBalances() {
-  if (!userAddress || !feedContract || !wrapContract) return;
+  if (!userAddress || !feedContract) return;
   try {
-    const [feedBal, wrapBal] = await Promise.all([
-      feedContract.balanceOf(userAddress),
-      wrapContract.balanceOf(userAddress)
-    ]);
+    const feedBal = await feedContract.balanceOf(userAddress);
     const f = ethers.formatUnits(feedBal, feedDecimal);
-    const w = ethers.formatUnits(wrapBal, feedDecimal);
     document.getElementById('balFeed').innerHTML = fmtNum(f, feedDecimal) + '<span class="unit">FEED</span>';
-    document.getElementById('balWFeed').innerHTML = fmtNum(w, feedDecimal) + '<span class="unit">wFEED</span>';
     document.getElementById('depMaxLabel').textContent = fmtNum(f, feedDecimal);
-    document.getElementById('wdMaxLabel').textContent = fmtNum(w, feedDecimal);
-    document.getElementById('inputDeposit').value = '';
-    document.getElementById('inputWithdraw').value = '';
-    document.getElementById('receiveAmount').textContent = '0 wFEED';
-    document.getElementById('receiveAmountWd').textContent = '0 FEED';
-    document.getElementById('btnDeposit').disabled = true;
-    document.getElementById('btnWithdraw').disabled = true;
   } catch (err) {
-    console.error('refreshBalances', err);
-    toast('Failed to fetch balances.', 'error');
+    console.error('feedBal', err);
+  }
+  if (!wrapContract) return;
+  try {
+    const wrapBal = await wrapContract.balanceOf(userAddress);
+    const w = ethers.formatUnits(wrapBal, feedDecimal);
+    document.getElementById('balWFeed').innerHTML = fmtNum(w, feedDecimal) + '<span class="unit">wFEED</span>';
+    document.getElementById('wdMaxLabel').textContent = fmtNum(w, feedDecimal);
+  } catch (err) {
+    console.error('wrapBal', err);
   }
 }
 
