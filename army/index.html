@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shib Token Unification Proposal — ARMY</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { display: ['Space Grotesk','sans-serif'], mono: ['JetBrains Mono','monospace'] },
+      colors: {
+        void: '#0a0e1a', abyss: '#0f1629', panel: '#141b2d', border: '#1e2a45',
+        accent: '#00e5a0', accentDim: '#00b37d', glow: '#00e5a033',
+        warn: '#ff6b6b', gold: '#ffd700', cyan: '#00d4ff', purple: '#a855f7',
+        txt: '#e2e8f0', txtDim: '#94a3b8',
+      }
+    }
+  }
+}
+</script>
+<style>
+* { box-sizing: border-box; }
+body { background: #0a0e1a; overflow-x: hidden; }
+::selection { background: #00e5a044; color: #fff; }
+.grain::before {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size: 200px; opacity: 0.4;
+}
+.glow-line { height: 1px; background: linear-gradient(90deg, transparent, #00e5a0, transparent); }
+.glow-text { text-shadow: 0 0 40px #00e5a044, 0 0 80px #00e5a022; }
+.card {
+  background: linear-gradient(135deg, #141b2d 0%, #0f1629 100%);
+  border: 1px solid #1e2a45; border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+.card:hover { border-color: #00e5a044; box-shadow: 0 0 30px #00e5a011; }
+.tag {
+  display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+}
+.tag-green { background: #00e5a018; color: #00e5a0; border: 1px solid #00e5a033; }
+.tag-yellow { background: #ffd70018; color: #ffd700; border: 1px solid #ffd70033; }
+.tag-red { background: #ff6b6b18; color: #ff6b6b; border: 1px solid #ff6b6b33; }
+.tag-blue { background: #00d4ff18; color: #00d4ff; border: 1px solid #00d4ff33; }
+.tag-purple { background: #a855f718; color: #a855f7; border: 1px solid #a855f733; }
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 3px; z-index: 10000;
+  background: linear-gradient(90deg, #00e5a0, #00d4ff); transform-origin: left;
+  box-shadow: 0 0 10px #00e5a0;
+}
+.section-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 700; letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.hero-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, #00e5a011 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 20%, #00d4ff09 0%, transparent 70%),
+    radial-gradient(ellipse 50% 60% at 50% 80%, #a855f709 0%, transparent 70%);
+}
+.rule-num {
+  width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 1.1rem; flex-shrink: 0;
+}
+@keyframes pulse-glow { 0%,100% { box-shadow: 0 0 20px #00e5a022; } 50% { box-shadow: 0 0 40px #00e5a044; } }
+.pulse { animation: pulse-glow 3s ease-in-out infinite; }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.float { animation: float 4s ease-in-out infinite; }
+.chart-container { width: 100%; min-height: 320px; }
+@media (max-width: 768px) { .chart-container { min-height: 260px; } }
+</style>
+</head>
+<body class="bg-void text-txt font-display">
+<div class="grain"></div>
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- HERO -->
+<section class="hero-mesh min-h-screen flex items-center justify-center relative px-6">
+  <div class="max-w-4xl mx-auto text-center" id="hero">
+    <div class="tag tag-green mb-6">COMMUNITY PROPOSAL</div>
+    <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight glow-text">
+      Token Unification<br><span class="text-accent">ARMY</span>
+    </h1>
+    <p class="text-lg md:text-xl text-txtDim max-w-2xl mx-auto mb-10 leading-relaxed">
+      A market-driven mechanism to unify the Shib ecosystem under a single token — no forced migrations, no burns, fully decentralized.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4 mb-12">
+      <div class="card px-5 py-3 text-center">
+        <div class="font-mono text-accent text-lg font-semibold">Shibarmy</div>
+        <div class="text-xs text-txtDim">Token Name</div>
+      </div>
+      <div class="card px-5 py-3 text-center">
+        <div class="font-mono text-cyan text-lg font-semibold">ARMY</div>
+        <div class="text-xs text-txtDim">Symbol</div>
+      </div>
+      <div class="card px-5 py-3 text-center">
+        <div class="font-mono text-gold text-lg font-semibold">1,000,000,000</div>
+        <div class="text-xs text-txtDim">Max Supply</div>
+      </div>
+      <div class="card px-5 py-3 text-center">
+        <div class="font-mono text-purple text-lg font-semibold">18</div>
+        <div class="text-xs text-txtDim">Decimals</div>
+      </div>
+    </div>
+    <div class="text-txtDim text-sm font-mono">SCROLL TO EXPLORE ↓</div>
+  </div>
+</section>
+<!-- CURRENT SITUATION -->
+<section class="py-16 px-6" id="situation">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-yellow">THE PROBLEM</span>
+    </div>
+    <h2 class="section-title text-white mb-6">Why We Need Clear Rules</h2>
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
+      <div class="card p-5">
+        <div class="text-warn text-2xl font-bold mb-2">Most holders won't swap</div>
+        <p class="text-txtDim leading-relaxed">BONE, LEASH, and TREAT holders are largely inactive. Many will simply choose not to participate, meaning very few people will actually exchange.</p>
+      </div>
+      <div class="card p-5">
+        <div class="text-warn text-2xl font-bold mb-2">No ratio satisfies everyone</div>
+        <p class="text-txtDim leading-relaxed">Without complete rules, a new token sitting alongside old ones only splits the Shib community further. We need a clear, fair, executable framework.</p>
+      </div>
+    </div>
+    <div class="card p-6 pulse">
+      <p class="text-center text-lg text-white leading-relaxed">
+        <span class="text-accent font-semibold">Core principle:</span> Use market mechanisms instead of top-down decisions. No forced swaps, no token burns — let the new token naturally replace old ones through price action and arbitrage.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- EXCHANGE RATIO -->
+<section class="py-16 px-6" id="exchange">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-green">EXCHANGE MECHANICS</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Exchange Ratio</h2>
+    <p class="text-txtDim mb-8 max-w-2xl">Fixed ratios — no oracle dependency. BONE anchors the system as the largest market cap token in the Shib ecosystem.</p>
+    <div class="grid md:grid-cols-3 gap-4 mb-8">
+      <div class="card p-5 text-center">
+        <div class="text-2xl font-bold text-white mb-1">BONE</div>
+        <div class="text-txtDim text-sm mb-3">Market Cap Anchor</div>
+        <div class="font-mono text-xl text-accent">$1 = <span class="text-white font-bold">20</span> ARMY</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="text-2xl font-bold text-white mb-1">LEASH</div>
+        <div class="text-txtDim text-sm mb-3">Ecosystem Token</div>
+        <div class="font-mono text-xl text-cyan">$1 = <span class="text-white font-bold">20</span> ARMY</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="text-2xl font-bold text-white mb-1">TREAT</div>
+        <div class="text-txtDim text-sm mb-3">Ecosystem Token</div>
+        <div class="font-mono text-xl text-purple">$1 = <span class="text-white font-bold">20</span> ARMY</div>
+      </div>
+    </div>
+    <div class="card p-5 border-l-4 border-l-accent">
+      <div class="flex items-start gap-3">
+        <span class="text-accent text-xl mt-0.5">⚙</span>
+        <div>
+          <div class="text-white font-semibold mb-1">No Oracle Dependency</div>
+          <p class="text-txtDim text-sm leading-relaxed">All exchanges use fixed quantity confirmation, not tied to real-time on-chain prices. This eliminates oracle risk and smart contract complexity.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- PARTICIPATION LIMITS -->
+<section class="py-16 px-6" id="limits">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-blue">SUPPLY CAPS</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Participation Limits</h2>
+    <p class="text-txtDim mb-8 max-w-2xl">Not all supply will be exchanged. Each token has a capped participation quota to prevent waste and create competitive urgency.</p>
+    <div class="grid md:grid-cols-2 gap-6 items-center">
+      <div>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div id="chartBone" style="width:100%;height:120px;"></div>
+            <div class="text-white font-semibold text-sm mt-2">BONE</div>
+            <div class="text-accent font-mono text-lg">60%</div>
+          </div>
+          <div class="text-center">
+            <div id="chartLeash" style="width:100%;height:120px;"></div>
+            <div class="text-white font-semibold text-sm mt-2">LEASH</div>
+            <div class="text-cyan font-mono text-lg">40%</div>
+          </div>
+          <div class="text-center">
+            <div id="chartTreat" style="width:100%;height:120px;"></div>
+            <div class="text-white font-semibold text-sm mt-2">TREAT</div>
+            <div class="text-purple font-mono text-lg">20%</div>
+          </div>
+        </div>
+      </div>
+      <div class="space-y-3">
+        <div class="card p-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-white font-semibold">BONE</span>
+            <span class="tag tag-green">60%</span>
+          </div>
+          <p class="text-txtDim text-sm">60% of BONE supply available for exchange. Largest market cap token — anchors the system.</p>
+        </div>
+        <div class="card p-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-white font-semibold">LEASH</span>
+            <span class="tag tag-blue">40%</span>
+          </div>
+          <p class="text-txtDim text-sm">40% of LEASH supply available. Balanced access for early participants.</p>
+        </div>
+        <div class="card p-4">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-white font-semibold">TREAT</span>
+            <span class="tag tag-purple">20%</span>
+          </div>
+          <p class="text-txtDim text-sm">Only 20% of TREAT supply. Smaller ecosystem token — limited quota preserves scarcity.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card p-5 mt-6 border-l-4 border-l-cyan">
+      <div class="flex items-start gap-3">
+        <span class="text-cyan text-xl mt-0.5">⏳</span>
+        <div>
+          <div class="text-white font-semibold mb-1">Permanent Access</div>
+          <p class="text-txtDim text-sm leading-relaxed">The exchange channel remains <strong class="text-white">permanently open</strong> — no phases, no deadline. Users can exchange at any time at the fixed ratio. Once a token's quota is exhausted, its channel closes permanently.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- RULES -->
+<section class="py-16 px-6" id="rules">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-green">CORE RULES</span>
+    </div>
+    <h2 class="section-title text-white mb-8">How It Works</h2>
+    <div class="space-y-4">
+      <!-- Rule 1: Zero Burn -->
+      <div class="card p-5 flex gap-4 items-start">
+        <div class="rule-num bg-accent/15 text-accent">01</div>
+        <div>
+          <h3 class="text-white text-lg font-semibold mb-1">Zero Burn</h3>
+          <p class="text-txtDim leading-relaxed">No tokens are burned during the exchange. Old tokens remain in the system as the basis for reversible conversion. Nothing is destroyed — everything is transformable.</p>
+        </div>
+      </div>
+      <!-- Rule 2: Reversible Exchange -->
+      <div class="card p-5 flex gap-4 items-start">
+        <div class="rule-num bg-cyan/15 text-cyan">02</div>
+        <div>
+          <h3 class="text-white text-lg font-semibold mb-1">Reversible Exchange (Original Swappers Only)</h3>
+          <p class="text-txtDim leading-relaxed mb-3">Anyone who completes an exchange can convert ARMY back to the original token — as long as they still hold the ARMY. This right is <strong class="text-white">non-transferable</strong>: if the original swapper sells their ARMY, the new buyer cannot swap back.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div class="bg-void/50 rounded-lg p-2.5 text-center">
+              <div class="text-accent text-sm font-mono mb-1">STEP 1</div>
+              <div class="text-white text-sm">Swap old → ARMY</div>
+            </div>
+            <div class="bg-void/50 rounded-lg p-2.5 text-center">
+              <div class="text-cyan text-sm font-mono mb-1">STEP 2</div>
+              <div class="text-white text-sm">Hold or sell ARMY</div>
+            </div>
+            <div class="bg-void/50 rounded-lg p-2.5 text-center">
+              <div class="text-gold text-sm font-mono mb-1">STEP 3</div>
+              <div class="text-white text-sm">If still holding: swap back</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Rule 3: 24h Cooldown -->
+      <div class="card p-5 flex gap-4 items-start">
+        <div class="rule-num bg-gold/15 text-gold">03</div>
+        <div>
+          <h3 class="text-white text-lg font-semibold mb-1">24-Hour Cooldown (Both Directions)</h3>
+          <p class="text-txtDim leading-relaxed">Every exchange operation — whether swapping old tokens to ARMY or converting ARMY back — requires a <strong class="text-white">24-hour cooldown</strong>. This prevents rapid-fire manipulation and ensures deliberate decision-making. No new exchange can be initiated during the cooldown period.</p>
+        </div>
+      </div>
+      <!-- Rule 4: Price Protection -->
+      <div class="card p-5 flex gap-4 items-start">
+        <div class="rule-num bg-purple/15 text-purple">04</div>
+        <div>
+          <h3 class="text-white text-lg font-semibold mb-1">Price Protection via Arbitrage</h3>
+          <p class="text-txtDim leading-relaxed mb-2">This mechanism ensures ARMY's price <strong class="text-white">never falls below</strong> the old tokens. If ARMY drops below parity, original swappers can buy ARMY cheaply, swap back to old tokens, and sell at a profit — market forces automatically close the gap.</p>
+          <div class="bg-void/50 rounded-lg p-3">
+            <div class="text-sm text-txtDim mb-2 font-mono">Arbitrage Flow:</div>
+            <div class="flex flex-wrap items-center gap-2 text-sm">
+              <span class="tag tag-purple">Buy ARMY (cheap)</span>
+              <span class="text-txtDim">→</span>
+              <span class="tag tag-green">Swap back to old token</span>
+              <span class="text-txtDim">→</span>
+              <span class="tag tag-yellow">Sell old token (profit)</span>
+            </div>
+            <div class="mt-2 text-xs text-warn">⚠ Original swappers bear price volatility risk during the 24h cooldown. The contract does not guarantee market price at conversion time.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ECOSYSTEM -->
+<section class="py-16 px-6" id="ecosystem">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-yellow">OPEN FOR DISCUSSION</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Ecosystem Projects</h2>
+    <p class="text-txtDim mb-6 max-w-2xl">Whether to include other Shib ecosystem projects in the exchange is left to community vote. Below are projects under consideration:</p>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div class="card p-4 text-center">
+        <div class="text-2xl mb-1">🐕</div>
+        <div class="text-white font-semibold">SHEB</div>
+        <div class="text-xs text-txtDim mt-1">NFT</div>
+        <div class="tag tag-yellow mt-2 text-xs">TBD</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl mb-1">🌐</div>
+        <div class="text-white font-semibold">Shib Land</div>
+        <div class="text-xs text-txtDim mt-1">Metaverse / Game</div>
+        <div class="tag tag-yellow mt-2 text-xs">TBD</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl mb-1">🎨</div>
+        <div class="text-white font-semibold">SOU</div>
+        <div class="text-xs text-txtDim mt-1">NFT</div>
+        <div class="tag tag-yellow mt-2 text-xs">TBD</div>
+      </div>
+      <div class="card p-4 text-center">
+        <div class="text-2xl mb-1">🔮</div>
+        <div class="text-white font-semibold">Others</div>
+        <div class="text-xs text-txtDim mt-1">TBD</div>
+        <div class="tag tag-yellow mt-2 text-xs">TBD</div>
+      </div>
+    </div>
+    <div class="card p-5">
+      <div class="text-white font-semibold mb-2">Factors for Community Consideration:</div>
+      <ul class="space-y-1.5 text-txtDim text-sm">
+        <li class="flex gap-2"><span class="text-accent">•</span> Relevance to the core Shib ecosystem</li>
+        <li class="flex gap-2"><span class="text-accent">•</span> Impact on the project's own value and users</li>
+        <li class="flex gap-2"><span class="text-accent">•</span> Smart contract implementation complexity</li>
+        <li class="flex gap-2"><span class="text-accent">•</span> Effect on the overall token unification process</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- NATURAL REPLACEMENT -->
+<section class="py-16 px-6" id="replacement">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-green">MARKET DYNAMICS</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Natural Replacement Logic</h2>
+    <p class="text-txtDim mb-6 max-w-2xl">No forced migration. No burns. The new token replaces old ones through pure market forces.</p>
+    <div class="grid md:grid-cols-2 gap-6 items-center">
+      <div id="chartFlow" class="chart-container" style="min-height:280px;"></div>
+      <div class="space-y-3">
+        <div class="flex gap-3 items-start">
+          <div class="w-7 h-7 rounded-full bg-accent/20 text-accent flex items-center justify-center font-mono text-xs font-bold flex-shrink-0">1</div>
+          <p class="text-txtDim text-sm leading-relaxed"><strong class="text-white">Price rises</strong> → Old token holders are incentivized to exchange for ARMY</p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-7 h-7 rounded-full bg-cyan/20 text-cyan flex items-center justify-center font-mono text-xs font-bold flex-shrink-0">2</div>
+          <p class="text-txtDim text-sm leading-relaxed"><strong class="text-white">Arbitrage safety net</strong> → If old tokens outperform, original swappers can reverse and profit</p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-7 h-7 rounded-full bg-gold/20 text-gold flex items-center justify-center font-mono text-xs font-bold flex-shrink-0">3</div>
+          <p class="text-txtDim text-sm leading-relaxed"><strong class="text-white">Gradual shift</strong> → More holders exchange and choose to keep ARMY, old tokens exit circulation</p>
+        </div>
+        <div class="flex gap-3 items-start">
+          <div class="w-7 h-7 rounded-full bg-purple/20 text-purple flex items-center justify-center font-mono text-xs font-bold flex-shrink-0">4</div>
+          <p class="text-txtDim text-sm leading-relaxed"><strong class="text-white">Natural unification</strong> → ARMY becomes the de facto token through market adoption</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM ALLOCATION -->
+<section class="py-16 px-6" id="team">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-yellow">COMMUNITY DECISION</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Team Allocation</h2>
+    <p class="text-txtDim mb-6 max-w-2xl">Whether the team receives a token allocation is entirely up to community vote. Options on the table:</p>
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="card p-5 text-center">
+        <div class="text-3xl mb-2">🚫</div>
+        <div class="text-white font-semibold mb-1">No Team Allocation</div>
+        <p class="text-txtDim text-sm">All tokens distributed through exchange. Team takes nothing extra.</p>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="text-3xl mb-2">📊</div>
+        <div class="text-white font-semibold mb-1">Fixed Percentage</div>
+        <p class="text-txtDim text-sm">Reserve 5-10% for development and ecosystem growth, with vesting schedule.</p>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="text-3xl mb-2">🗳️</div>
+        <div class="text-white font-semibold mb-1">Community Proposal</div>
+        <p class="text-txtDim text-sm">Open for any community-proposed alternative structure.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SMART CONTRACT -->
+<section class="py-16 px-6" id="contract">
+  <div class="max-w-5xl mx-auto">
+    <div class="glow-line mb-10"></div>
+    <div class="flex items-center gap-3 mb-3">
+      <span class="tag tag-blue">ON-CHAIN EXECUTION</span>
+    </div>
+    <h2 class="section-title text-white mb-3">Decentralized Smart Contract</h2>
+    <p class="text-txtDim mb-6 max-w-2xl">Everything runs on-chain. No centralized intervention. Rules are transparent and immutable.</p>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div class="card p-4">
+        <div class="text-accent font-mono text-xs mb-1">FUNCTION 01</div>
+        <div class="text-white font-semibold text-sm">Old → ARMY Exchange</div>
+        <p class="text-txtDim text-xs mt-1">Fixed ratio swap with quota tracking</p>
+      </div>
+      <div class="card p-4">
+        <div class="text-cyan font-mono text-xs mb-1">FUNCTION 02</div>
+        <div class="text-white font-semibold text-sm">ARMY → Old Reversal</div>
+        <p class="text-txtDim text-xs mt-1">Original swappers only, non-transferable right</p>
+      </div>
+      <div class="card p-4">
+        <div class="text-gold font-mono text-xs mb-1">FUNCTION 03</div>
+        <div class="text-white font-semibold text-sm">Cooldown Timer</div>
+        <p class="text-txtDim text-xs mt-1">24h lock on both swap directions</p>
+      </div>
+      <div class="card p-4">
+        <div class="text-purple font-mono text-xs mb-1">FUNCTION 04</div>
+        <div class="text-white font-semibold text-sm">Identity Tracking</div>
+        <p class="text-txtDim text-xs mt-1">On-chain record ensuring non-transferable rights</p>
+      </div>
+      <div class="card p-4">
+        <div class="text-warn font-mono text-xs mb-1">FUNCTION 05</div>
+        <div class="text-white font-semibold text-sm">Quota Management</div>
+        <p class="text-txtDim text-xs mt-1">Per-token supply caps with auto-close on exhaustion</p>
+      </div>
+      <div class="card p-4">
+        <div class="text-accent font-mono text-xs mb-1">FUNCTION 06</div>
+        <div class="text-white font-semibold text-sm">Ecosystem Toggle</div>
+        <p class="text-txtDim text-xs mt-1">Governance-controlled on/off for ecosystem projects</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="py-12 px-6 text-center">
+  <div class="glow-line mb-10 max-w-5xl mx-auto"></div>
+  <div class="max-w-2xl mx-auto">
+    <h3 class="text-2xl md:text-3xl font-bold text-white mb-3 glow-text">Market Mechanism Over Mandate</h3>
+    <p class="text-txtDim leading-relaxed mb-5">No one is forced to swap. No tokens are burned. Through reversible exchange, arbitrage incentives, and smart contract enforcement, ARMY naturally replaces legacy tokens as its value grows.</p>
+    <div class="flex flex-wrap justify-center gap-2">
+      <span class="tag tag-green">Decentralized</span>
+      <span class="tag tag-blue">Transparent</span>
+      <span class="tag tag-purple">No Burns</span>
+      <span class="tag tag-yellow">Community Governed</span>
+    </div>
+    <div class="mt-8 text-txtDim text-xs font-mono">SHIBARMY TOKEN UNIFICATION PROPOSAL — DRAFT FOR COMMUNITY REVIEW</div>
+  </div>
+</footer>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// Progress bar
+gsap.to('#progressBar', {
+  scaleX: 1, ease: 'none',
+  scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 0.3 }
+});
+
+// Hero entrance
+gsap.from('#hero > *', {
+  y: 40, opacity: 0, duration: 1, stagger: 0.15, ease: 'power3.out'
+});
+
+// Section animations
+document.querySelectorAll('section:not(:first-of-type)').forEach(sec => {
+  gsap.from(sec.querySelectorAll('.card, h2, p, .grid > div'), {
+    y: 30, opacity: 0, duration: 0.7, stagger: 0.08, ease: 'power2.out',
+    scrollTrigger: { trigger: sec, start: 'top 75%', toggleActions: 'play none none none' }
+  });
+});
+
+// Chart: Participation Limits (Three separate gauges)
+function createGauge(elementId, percentage, color) {
+  const chart = echarts.init(document.getElementById(elementId), null, { renderer: 'svg' });
+  chart.setOption({
+    series: [{
+      type: 'pie', radius: ['70%', '90%'], center: ['50%', '50%'],
+      startAngle: 90, silent: true, label: { show: false },
+      data: [
+        { value: percentage, itemStyle: { color: color } },
+        { value: 100 - percentage, itemStyle: { color: '#1e2a45' } }
+      ],
+      animationType: 'scale', animationEasing: 'elasticOut'
+    }]
+  });
+  return chart;
+}
+
+const chartBone = createGauge('chartBone', 60, '#00e5a0');
+const chartLeash = createGauge('chartLeash', 40, '#00d4ff');
+const chartTreat = createGauge('chartTreat', 20, '#a855f7');
+
+// Chart: Natural Replacement Flow (Sankey-like bar)
+const chartFlow = echarts.init(document.getElementById('chartFlow'), null, { renderer: 'svg' });
+chartFlow.setOption({
+  tooltip: {
+    trigger: 'axis', axisPointer: { type: 'shadow' },
+    backgroundColor: '#141b2d', borderColor: '#1e2a45', borderWidth: 1,
+    textStyle: { color: '#e2e8f0', fontFamily: 'Space Grotesk' }
+  },
+  grid: { left: '3%', right: '4%', bottom: '8%', top: '12%', containLabel: true },
+  xAxis: {
+    type: 'category',
+    data: ['Phase 1\nEarly Adopters', 'Phase 2\nGrowing Interest', 'Phase 3\nMajority Shift', 'Phase 4\nFull Unification'],
+    axisLine: { lineStyle: { color: '#1e2a45' } },
+    axisLabel: { color: '#94a3b8', fontFamily: 'Space Grotesk', fontSize: 11, interval: 0 },
+    axisTick: { show: false }
+  },
+  yAxis: {
+    type: 'value', max: 100,
+    axisLine: { show: false }, axisTick: { show: false },
+    splitLine: { lineStyle: { color: '#1e2a45', type: 'dashed' } },
+    axisLabel: { color: '#94a3b8', fontFamily: 'JetBrains Mono', formatter: '{value}%' }
+  },
+  series: [
+    {
+      name: 'ARMY Adoption', type: 'bar', stack: 'total', barWidth: '45%',
+      data: [25, 50, 75, 95],
+      itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: '#00e5a0' }, { offset: 1, color: '#00b37d' }
+      ]), borderRadius: [6, 6, 0, 0] },
+      animationDelay: i => i * 200
+    },
+    {
+      name: 'Legacy Tokens', type: 'bar', stack: 'total', barWidth: '45%',
+      data: [75, 50, 25, 5],
+      itemStyle: { color: '#1e2a45', borderRadius: [6, 6, 0, 0] },
+      animationDelay: i => i * 200 + 100
+    }
+  ],
+  animationEasing: 'cubicOut', animationDuration: 1200
+});
+
+// Resize
+window.addEventListener('resize', () => { chartBone.resize(); chartLeash.resize(); chartTreat.resize(); chartFlow.resize(); });
+
+// Animate charts on scroll
+ScrollTrigger.create({
+  trigger: '#chartBone', start: 'top 80%',
+  onEnter: () => { chartBone.resize(); chartLeash.resize(); chartTreat.resize(); }
+});
+ScrollTrigger.create({
+  trigger: '#chartFlow', start: 'top 80%',
+  onEnter: () => chartFlow.resize()
+});
+</script>
+</body>
+</html>
