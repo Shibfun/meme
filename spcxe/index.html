@@ -400,6 +400,32 @@
             text-shadow: 0 0 10px rgba(120, 80, 255, 0.6);
         }
 
+        .copy-btn {
+            background: rgba(120, 80, 255, 0.2);
+            border: 1px solid rgba(120, 80, 255, 0.4);
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: #50c8ff;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .copy-btn:hover {
+            background: rgba(120, 80, 255, 0.4);
+            box-shadow: 0 0 10px rgba(120, 80, 255, 0.5);
+            color: #fff;
+        }
+
+        .copy-btn.copied {
+            background: rgba(80, 200, 120, 0.3);
+            border-color: rgba(80, 200, 120, 0.6);
+            color: #50c878;
+        }
+
         /* Status Message */
         .status {
             text-align: center;
@@ -537,6 +563,7 @@
                     <a href="https://bscscan.com/address/0x7a66190389B9f626F63Cf2F76339e8706BA460Ca" target="_blank">
                         0x7a66...60Ca
                     </a>
+                    <button class="copy-btn" onclick="copyAddress()" data-en="Copy" data-zh="复制">Copy</button>
                 </span>
             </div>
             <div class="info-row">
@@ -757,6 +784,22 @@
             });
             document.getElementById('depositTab').style.display = tab === 'deposit' ? 'block' : 'none';
             document.getElementById('withdrawTab').style.display = tab === 'withdraw' ? 'block' : 'none';
+        }
+
+        function copyAddress() {
+            const addr = '0x7a66190389B9f626F63Cf2F76339e8706BA460Ca';
+            navigator.clipboard.writeText(addr).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const original = btn.textContent;
+                btn.textContent = currentLang === 'en' ? 'Copied!' : '已复制！';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(() => {
+                showStatus(currentLang === 'en' ? 'Copy failed' : '复制失败', 'error');
+            });
         }
 
         async function deposit() {
