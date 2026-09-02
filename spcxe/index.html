@@ -248,6 +248,16 @@
             transition: all 0.3s;
         }
 
+        /* Remove number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
         input[type="number"]:focus {
             border-color: rgba(120, 80, 255, 0.8);
             box-shadow: 0 0 20px rgba(120, 80, 255, 0.3);
@@ -276,7 +286,7 @@
         }
 
         .action-btn {
-            flex: 1;
+            width: 100%;
             padding: 15px;
             border: none;
             border-radius: 12px;
@@ -312,6 +322,41 @@
         .action-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(120, 80, 255, 0.3);
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .tab-btn.active {
+            background: rgba(120, 80, 255, 0.3);
+            border-color: rgba(120, 80, 255, 0.6);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(120, 80, 255, 0.4);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: rgba(120, 80, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* Info Section */
@@ -453,18 +498,32 @@
                 <div class="balance-value" id="balanceValue">0.0</div>
             </div>
 
-            <div class="input-group">
-                <label class="input-label" data-en="Amount" data-zh="数量">Amount</label>
-                <div class="input-wrapper">
-                    <input type="number" id="amountInput" placeholder="0.0" step="any">
-                    <button class="max-btn" onclick="setMax()" data-en="MAX" data-zh="最大">MAX</button>
-                </div>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="deposit" onclick="switchTab('deposit')" data-en="Deposit" data-zh="存入">Deposit</button>
+                <button class="tab-btn" data-tab="withdraw" onclick="switchTab('withdraw')" data-en="Withdraw" data-zh="取出">Withdraw</button>
             </div>
 
-            <div class="btn-group">
+            <div id="depositTab" class="tab-content">
+                <div class="input-group">
+                    <label class="input-label" data-en="SPCXB Amount" data-zh="SPCXB 数量">SPCXB Amount</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="depositAmount" placeholder="0.0" step="any">
+                        <button class="max-btn" onclick="setMaxDeposit()" data-en="MAX" data-zh="最大">MAX</button>
+                    </div>
+                </div>
                 <button class="action-btn deposit-btn" id="depositBtn" onclick="deposit()" disabled>
                     <span data-en="Deposit" data-zh="存入">Deposit</span>
                 </button>
+            </div>
+
+            <div id="withdrawTab" class="tab-content" style="display:none;">
+                <div class="input-group">
+                    <label class="input-label" data-en="WSPCXB Amount" data-zh="WSPCXB 数量">WSPCXB Amount</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="withdrawAmount" placeholder="0.0" step="any">
+                        <button class="max-btn" onclick="setMaxWithdraw()" data-en="MAX" data-zh="最大">MAX</button>
+                    </div>
+                </div>
                 <button class="action-btn withdraw-btn" id="withdrawBtn" onclick="withdraw()" disabled>
                     <span data-en="Withdraw" data-zh="取出">Withdraw</span>
                 </button>
@@ -670,19 +729,38 @@
             }
         }
 
-        async function setMax() {
+        async function setMaxDeposit() {
             if (!spcxbContract) return;
             try {
                 const balance = await spcxbContract.balanceOf(userAddress);
                 const formatted = ethers.utils.formatUnits(balance, 18);
-                document.getElementById('amountInput').value = formatted;
+                document.getElementById('depositAmount').value = formatted;
             } catch (err) {
                 showStatus(currentLang === 'en' ? 'Failed to fetch balance' : '获取余额失败', 'error');
             }
         }
 
+        async function setMaxWithdraw() {
+            if (!wspxbContract) return;
+            try {
+                const balance = await wspxbContract.balanceOf(userAddress);
+                const formatted = ethers.utils.formatUnits(balance, 18);
+                document.getElementById('withdrawAmount').value = formatted;
+            } catch (err) {
+                showStatus(currentLang === 'en' ? 'Failed to fetch balance' : '获取余额失败', 'error');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            document.getElementById('depositTab').style.display = tab === 'deposit' ? 'block' : 'none';
+            document.getElementById('withdrawTab').style.display = tab === 'withdraw' ? 'block' : 'none';
+        }
+
         async function deposit() {
-            const amount = document.getElementById('amountInput').value;
+            const amount = document.getElementById('depositAmount').value;
             if (!amount || parseFloat(amount) <= 0) {
                 showStatus(currentLang === 'en' ? 'Please enter a valid amount' : '请输入有效数量', 'error');
                 return;
@@ -704,7 +782,7 @@
                 await depositTx.wait();
 
                 await updateBalance();
-                document.getElementById('amountInput').value = '';
+                document.getElementById('depositAmount').value = '';
                 showStatus(currentLang === 'en' ? 'Deposit successful!' : '存入成功！', 'success');
             } catch (err) {
                 showStatus(err.reason || err.message || 'Transaction failed', 'error');
@@ -712,7 +790,7 @@
         }
 
         async function withdraw() {
-            const amount = document.getElementById('amountInput').value;
+            const amount = document.getElementById('withdrawAmount').value;
             if (!amount || parseFloat(amount) <= 0) {
                 showStatus(currentLang === 'en' ? 'Please enter a valid amount' : '请输入有效数量', 'error');
                 return;
@@ -726,7 +804,7 @@
                 await withdrawTx.wait();
 
                 await updateBalance();
-                document.getElementById('amountInput').value = '';
+                document.getElementById('withdrawAmount').value = '';
                 showStatus(currentLang === 'en' ? 'Withdrawal successful!' : '取出成功！', 'success');
             } catch (err) {
                 showStatus(err.reason || err.message || 'Transaction failed', 'error');
