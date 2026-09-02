@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="https://bscscan.com/token/images/bstocks_spacexb_64.png">
     <link rel="apple-touch-icon" href="https://bscscan.com/token/images/bstocks_spacexb_64.png">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -515,12 +516,15 @@
 
         // Web3
         let userAddress = '';
+        let provider = null;
+        let signer = null;
         let wspxbContract = null;
         let spcxbContract = null;
+        let ethersReady = false;
 
         const WRAPPED_ADDR = '0x7a66190389B9f626F63Cf2F76339e8706BA460Ca';
         const SPCXB_ADDR = '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1';
-        const CHAIN_ID = '0x38'; // 56 in hex
+        const CHAIN_ID = '0x38';
         const BSC_PARAMS = {
             chainId: CHAIN_ID,
             chainName: 'BNB Smart Chain',
@@ -604,6 +608,11 @@
                 return;
             }
 
+            if (!ethersReady) {
+                showStatus('Loading Web3 library...', 'info');
+                return;
+            }
+
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 
@@ -627,9 +636,13 @@
                     }
                 }
 
-                userAddress = accounts[0];
-                wspxbContract = new ethers.Contract(WRAPPED_ADDR, WRAPPED_ABI, window.ethereum.getSigner());
-                spcxbContract = new ethers.Contract(SPCXB_ADDR, SPCXB_ABI, window.ethereum.getSigner());
+                // Create provider and signer properly for ethers.js v5
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                wspxbContract = new ethers.Contract(WRAPPED_ADDR, WRAPPED_ABI, signer);
+                spcxbContract = new ethers.Contract(SPCXB_ADDR, SPCXB_ABI, signer);
 
                 const btn = document.getElementById('connectBtn');
                 btn.classList.add('connected');
@@ -729,16 +742,37 @@
             }, 5000);
         }
 
-        // Load ethers.js
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js';
-        script.onload = () => {
-            console.log('Ethers.js loaded');
-        };
-        document.head.appendChild(script);
+        // Initialize ethers.js ready state
+        if (typeof ethers !== 'undefined') {
+            ethersReady = true;
+            console.log('Ethers.js ready');
+        }
 
-        // Auto-refresh balance
-        setInterval(updateBalance, 10000);
+        // Listen for account changes
+        if (window.ethereum) {
+            window.ethereum.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    // Disconnected
+                    userAddress = '';
+                    wspxbContract = null;
+                    spcxbContract = null;
+                    const btn = document.getElementById('connectBtn');
+                    btn.classList.remove('connected');
+                    btn.innerHTML = `<span data-en="Connect Wallet" data-zh="连接钱包">${currentLang === 'en' ? 'Connect Wallet' : '连接钱包'}</span>`;
+                    document.getElementById('depositBtn').disabled = true;
+                    document.getElementById('withdrawBtn').disabled = true;
+                    document.getElementById('balanceValue').textContent = '0.0';
+                } else {
+                    // Reconnect with new account
+                    connectWallet();
+                }
+            });
+
+            // Listen for chain changes
+            window.ethereum.on('chainChanged', () => {
+                window.location.reload();
+            });
+        }
     </script>
 </body>
 </html>
